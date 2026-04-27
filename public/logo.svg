@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <rect width="500" height="500" fill="#006400" rx="0"/>
+  <text
+    x="50%"
+    y="53%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial Black, Arial, Helvetica, sans-serif"
+    font-size="190"
+    font-weight="900"
+    letter-spacing="-4"
+  >Bond</text>
+</svg>
