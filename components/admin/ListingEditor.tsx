@@ -129,20 +129,29 @@ export default function ListingEditor({ initial, isNew }: Props) {
       images: tour.images.filter(Boolean),
       pricing: tour.pricing.filter((p) => p.guests > 0),
     };
-    const res = await fetch(
-      isNew ? "/api/admin/listings" : `/api/admin/listings/${id}`,
-      {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    try {
+      const res = await fetch(
+        isNew ? "/api/admin/listings" : `/api/admin/listings/${id}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (res.ok) {
+        router.push("/admin/listings");
+        router.refresh();
+      } else {
+        let msg = `Save failed (${res.status})`;
+        try {
+          const data = await res.json();
+          msg = data.error ?? msg;
+        } catch { /* non-JSON error body */ }
+        setError(msg);
+        setSaving(false);
       }
-    );
-    if (res.ok) {
-      router.push("/admin/listings");
-      router.refresh();
-    } else {
-      const data = await res.json();
-      setError(data.error ?? "Save failed.");
+    } catch (e) {
+      setError(`Network error: ${e}`);
       setSaving(false);
     }
   };

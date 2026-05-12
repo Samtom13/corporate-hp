@@ -1,4 +1,3 @@
-import { put, list } from "@vercel/blob";
 import toursData from "@/data/tours.json";
 
 export type Tour = {
@@ -34,6 +33,7 @@ export type Booking = {
   status: "new" | "contacted" | "confirmed" | "cancelled";
 };
 
+const BLOB_BASE = "https://blob.vercel-storage.com";
 const TOURS_PATH = "bond-data/tours.json";
 const BOOKINGS_PATH = "bond-data/bookings.json";
 
@@ -44,39 +44,76 @@ function withDefaults(t: object): Tour {
   };
 }
 
-async function readBlob<T>(pathname: string): Promise<T[] | null> {
+function getToken(): string | null {
+  return process.env.BLOB_READ_WRITE_TOKEN ?? null;
+}
+
+/** Find the blob URL for a given pathname via the list API */
+async function getBlobUrl(pathname: string): Promise<string | null> {
+  const token = getToken();
+  if (!token) return null;
   try {
-    const { blobs } = await list({ prefix: pathname });
-    const blob = blobs.find((b) => b.pathname === pathname);
-    if (!blob) return null;
-    // Fetch with no cache to always get fresh data
-    const res = await fetch(blob.url, { cache: "no-store" });
+    const res = await fetch(
+      `${BLOB_BASE}?prefix=${encodeURIComponent(pathname)}&limit=10`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+    );
     if (!res.ok) return null;
-    return (await res.json()) as T[];
+    const { blobs } = await res.json() as { blobs: { pathname: string; url: string }[] };
+    return blobs.find((b) => b.pathname === pathname)?.url ?? null;
   } catch {
     return null;
   }
 }
 
-async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
-  await put(pathname, JSON.stringify(data), {
-    access: "public",
-    addRandomSuffix: false,
-    contentType: "application/json",
-    cacheControlMaxAge: 0, // no CDN caching — always serve fresh
-  });
+/** Read JSON array from Vercel Blob */
+async function readBlob<T>(pathname: string): Promise<T[] | null> {
+  const url = await getBlobUrl(pathname);
+  if (!url) return null;
+  try {
+    // fetch with Authorization bypasses CDN cache
+    const token = getToken()!;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return await res.json() as T[];
+  } catch {
+    return null;
+  }
 }
 
-// Tours
+/** Write JSON array to Vercel Blob (overwrites same path) */
+async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
+  const token = getToken();
+  if (!token) throw new Error("BLOB_READ_WRITE_TOKEN not set");
+  const res = await fetch(`${BLOB_BASE}/${pathname}?addRandomSuffix=0`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "x-content-type": "application/json",
+      "cache-control": "no-store",
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Blob write failed ${res.status}: ${text}`);
+  }
+}
+
+// ── Tours ──────────────────────────────────────────────
+
 export async function getTours(): Promise<Tour[]> {
   const stored = await readBlob<Tour>(TOURS_PATH);
   if (stored && stored.length > 0) return stored;
-  // Seed from bundled JSON on first run
+  // First run: seed from bundled static JSON
   const seed = (toursData as object[]).map(withDefaults);
   try {
     await writeBlob(TOURS_PATH, seed);
   } catch {
-    // BLOB_READ_WRITE_TOKEN not set (local dev) — return static data
+    // Token not set in local dev — return static data as read-only
   }
   return seed;
 }
@@ -102,7 +139,8 @@ export async function deleteTour(id: string): Promise<void> {
   await writeBlob(TOURS_PATH, tours);
 }
 
-// Bookings
+// ── Bookings ───────────────────────────────────────────
+
 export async function getBookings(): Promise<Booking[]> {
   return (await readBlob<Booking>(BOOKINGS_PATH)) ?? [];
 }
@@ -118,7 +156,7 @@ export async function saveBooking(booking: Booking): Promise<void> {
   if (idx >= 0) {
     bookings[idx] = booking;
   } else {
-    bookings.unshift(booking); // newest first
+    bookings.unshift(booking);
   }
   await writeBlob(BOOKINGS_PATH, bookings);
 }
