@@ -87,13 +87,12 @@ async function readBlob<T>(pathname: string): Promise<T[] | null> {
 async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
   const token = getToken();
   if (!token) throw new Error("BLOB_READ_WRITE_TOKEN not set");
-  const res = await fetch(`${BLOB_BASE}/${pathname}?addRandomSuffix=0`, {
+  const res = await fetch(`${BLOB_BASE}/${pathname}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       "x-content-type": "application/json",
-      "cache-control": "no-store",
     },
     body: JSON.stringify(data),
   });
