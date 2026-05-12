@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { saveBooking } from "@/lib/db";
+import type { Booking } from "@/lib/db";
 
 const ADMIN_EMAIL = "info@go-bond.jp";
 
@@ -21,7 +23,25 @@ export async function POST(request: Request) {
       return Response.json({ error: "Name and email are required." }, { status: 400 });
     }
 
-    const bookingId = `booking_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const booking: Booking = {
+      id: `booking_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: new Date().toISOString(),
+      name,
+      email,
+      whatsapp: whatsapp || undefined,
+      guests,
+      date: date || undefined,
+      flexibleDates: !!flexibleDates,
+      selectedTour: selectedTour || undefined,
+      selectedInterests: selectedInterests || [],
+      requests: requests || undefined,
+      status: "new",
+    };
+
+    // Save to KV (non-blocking — don't fail the request if it errors)
+    saveBooking(booking).catch((e) => console.error("saveBooking error:", e));
+
+    const bookingId = booking.id;
 
     const timestamp = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Tokyo",

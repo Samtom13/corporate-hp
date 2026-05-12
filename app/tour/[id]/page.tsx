@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import TourSidebar from "@/components/TourSidebar";
 import { getTourById, getTours } from "@/lib/db";
 
 type Props = {
@@ -9,14 +10,15 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  return getTours().map((t) => ({ id: t.id }));
+  const tours = await getTours();
+  return tours.map((t) => ({ id: t.id }));
 }
 
 export const dynamic = "force-dynamic";
 
 export default async function TourPage({ params }: Props) {
   const { id } = await params;
-  const tour = getTourById(id);
+  const tour = await getTourById(id);
   if (!tour) notFound();
 
   return (
@@ -51,50 +53,118 @@ export default async function TourPage({ params }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
             {/* Main */}
             <div className="lg:col-span-2 space-y-16">
+              {/* Description */}
               <div>
                 <p className="text-stone-600 font-light leading-relaxed text-lg">
                   {tour.description}
                 </p>
               </div>
 
-              <div>
-                <h2
-                  className="text-2xl font-light text-[#1A1A1A] mb-8"
-                  style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-                >
-                  Experience highlights
-                </h2>
-                <ul className="space-y-4">
-                  {tour.highlights.map((h, i) => (
-                    <li key={i} className="flex items-start gap-4">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#016812] flex-shrink-0" />
-                      <span className="text-stone-600 font-light text-sm leading-relaxed">{h}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h2
-                  className="text-2xl font-light text-[#1A1A1A] mb-8"
-                  style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-                >
-                  Sample itinerary
-                </h2>
-                <div className="space-y-0">
-                  {tour.itinerary.map((item, i) => (
-                    <div key={i} className="flex gap-6 py-5 border-b border-stone-100 last:border-b-0">
-                      <span className="text-xs text-[#016812] font-medium w-12 flex-shrink-0 mt-0.5">
-                        {item.time}
-                      </span>
-                      <span className="text-stone-600 font-light text-sm leading-relaxed">
-                        {item.activity}
-                      </span>
-                    </div>
-                  ))}
+              {/* Highlights */}
+              {tour.highlights.length > 0 && (
+                <div>
+                  <h2
+                    className="text-2xl font-light text-[#1A1A1A] mb-8"
+                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                  >
+                    Experience highlights
+                  </h2>
+                  <ul className="space-y-4">
+                    {tour.highlights.map((h, i) => (
+                      <li key={i} className="flex items-start gap-4">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#016812] flex-shrink-0" />
+                        <span className="text-stone-600 font-light text-sm leading-relaxed">{h}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
+              )}
 
+              {/* Includes / Excludes */}
+              {(tour.includes?.length > 0 || tour.excludes?.length > 0) && (
+                <div>
+                  <h2
+                    className="text-2xl font-light text-[#1A1A1A] mb-8"
+                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                  >
+                    What&apos;s included
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {tour.includes?.length > 0 && (
+                      <div>
+                        <p className="text-xs tracking-widest uppercase text-[#016812] mb-4">Included</p>
+                        <ul className="space-y-3">
+                          {tour.includes.map((item, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="text-[#016812] mt-0.5 flex-shrink-0">✓</span>
+                              <span className="text-stone-600 font-light text-sm leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {tour.excludes?.length > 0 && (
+                      <div>
+                        <p className="text-xs tracking-widest uppercase text-stone-400 mb-4">Not included</p>
+                        <ul className="space-y-3">
+                          {tour.excludes.map((item, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="text-stone-300 mt-0.5 flex-shrink-0">✕</span>
+                              <span className="text-stone-500 font-light text-sm leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Itinerary */}
+              {tour.itinerary.length > 0 && (
+                <div>
+                  <h2
+                    className="text-2xl font-light text-[#1A1A1A] mb-8"
+                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                  >
+                    Sample itinerary
+                  </h2>
+                  <div className="space-y-0">
+                    {tour.itinerary.map((item, i) => (
+                      <div key={i} className="flex gap-6 py-5 border-b border-stone-100 last:border-b-0">
+                        <span className="text-xs text-[#016812] font-medium w-12 flex-shrink-0 mt-0.5">
+                          {item.time}
+                        </span>
+                        <span className="text-stone-600 font-light text-sm leading-relaxed">
+                          {item.activity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Before you book */}
+              {tour.beforeYouBook?.length > 0 && (
+                <div className="bg-[#F5F4F2] p-8">
+                  <h2
+                    className="text-xl font-light text-[#1A1A1A] mb-6"
+                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                  >
+                    Before you book
+                  </h2>
+                  <ul className="space-y-3">
+                    {tour.beforeYouBook.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="text-stone-400 mt-0.5 flex-shrink-0 text-xs">—</span>
+                        <span className="text-stone-600 font-light text-sm leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Photos */}
               {tour.images.length > 1 && (
                 <div>
                   <h2
@@ -119,43 +189,7 @@ export default async function TourPage({ params }: Props) {
 
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-28 bg-[#F5F4F2] p-8 space-y-6">
-                <div>
-                  <p className="text-xs tracking-widest uppercase text-stone-400 mb-2">Duration</p>
-                  <p className="text-sm text-[#1A1A1A] font-light">{tour.duration}</p>
-                </div>
-                <div>
-                  <p className="text-xs tracking-widest uppercase text-stone-400 mb-2">Group size</p>
-                  <p className="text-sm text-[#1A1A1A] font-light">{tour.groupSize}</p>
-                </div>
-                {tour.priceFrom && (
-                  <div>
-                    <p className="text-xs tracking-widest uppercase text-stone-400 mb-2">Pricing</p>
-                    <p className="text-sm text-[#1A1A1A] font-light">{tour.priceFrom}</p>
-                    <p className="text-xs text-stone-400 mt-1">Exact price confirmed after your request.</p>
-                  </div>
-                )}
-                <div className="border-t border-stone-200 pt-6">
-                  <p className="text-xs text-stone-400 leading-relaxed mb-6">
-                    No payment required. We&apos;ll design your personalized experience and confirm all details first.
-                  </p>
-                  <Link
-                    href={`/booking?tour=${tour.id}`}
-                    className="block w-full text-center py-4 bg-[#016812] text-white text-xs tracking-widest uppercase hover:bg-[#014010] transition-colors duration-300"
-                  >
-                    Request This Experience
-                  </Link>
-                </div>
-                <div className="border-t border-stone-200 pt-6">
-                  <p className="text-xs tracking-widest uppercase text-stone-400 mb-3">Questions?</p>
-                  <a
-                    href="mailto:info@go-bond.jp"
-                    className="text-sm text-[#1A1A1A] hover:text-[#016812] transition-colors font-light"
-                  >
-                    info@go-bond.jp →
-                  </a>
-                </div>
-              </div>
+              <TourSidebar tour={tour} />
             </div>
           </div>
         </div>

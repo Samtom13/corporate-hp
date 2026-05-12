@@ -3,6 +3,8 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { getTours } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const steps = [
   {
     number: "01",
@@ -42,8 +44,8 @@ const testimonials = [
   },
 ];
 
-export default function HomePage() {
-  const experiences = getTours();
+export default async function HomePage() {
+  const experiences = await getTours();
 
   return (
     <>

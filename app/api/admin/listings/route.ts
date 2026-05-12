@@ -2,7 +2,7 @@ import { getTours, saveTour } from "@/lib/db";
 import type { Tour } from "@/lib/db";
 
 export async function GET() {
-  return Response.json(getTours());
+  return Response.json(await getTours());
 }
 
 export async function POST(request: Request) {
@@ -10,6 +10,6 @@ export async function POST(request: Request) {
   if (!body.id || !body.title) {
     return Response.json({ error: "id and title are required" }, { status: 400 });
   }
-  saveTour(body);
+  await saveTour(body);
   return Response.json({ success: true });
 }

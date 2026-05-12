@@ -3,8 +3,8 @@ import { getTours } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default function ListingsPage() {
-  const tours = getTours();
+export default async function ListingsPage() {
+  const tours = await getTours();
 
   return (
     <div className="p-8">

@@ -1,5 +1,5 @@
 import { getBookings } from "@/lib/db";
 
 export async function GET() {
-  return Response.json(getBookings());
+  return Response.json(await getBookings());
 }

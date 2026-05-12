@@ -36,20 +36,30 @@ export default function ListingEditor({ initial, isNew }: Props) {
     highlights: initial.highlights ?? [""],
     itinerary: initial.itinerary ?? [{ time: "", activity: "" }],
     images: initial.images ?? ["", "", ""],
+    pricing: initial.pricing ?? [],
+    includes: initial.includes ?? [""],
+    excludes: initial.excludes ?? [""],
+    beforeYouBook: initial.beforeYouBook ?? [""],
   });
 
   const set = (key: keyof Tour, value: unknown) =>
     setTour((prev) => ({ ...prev, [key]: value }));
 
-  // Highlights
-  const setHighlight = (i: number, v: string) => {
-    const arr = [...tour.highlights];
-    arr[i] = v;
-    set("highlights", arr);
-  };
-  const addHighlight = () => set("highlights", [...tour.highlights, ""]);
-  const removeHighlight = (i: number) =>
-    set("highlights", tour.highlights.filter((_, idx) => idx !== i));
+  // String list helpers
+  const makeListHandlers = (key: "highlights" | "includes" | "excludes" | "beforeYouBook") => ({
+    set: (i: number, v: string) => {
+      const arr = [...(tour[key] as string[])];
+      arr[i] = v;
+      set(key, arr);
+    },
+    add: () => set(key, [...(tour[key] as string[]), ""]),
+    remove: (i: number) => set(key, (tour[key] as string[]).filter((_, idx) => idx !== i)),
+  });
+
+  const highlights = makeListHandlers("highlights");
+  const includes = makeListHandlers("includes");
+  const excludes = makeListHandlers("excludes");
+  const beforeYouBook = makeListHandlers("beforeYouBook");
 
   // Itinerary
   const setItinerary = (i: number, field: "time" | "activity", v: string) => {
@@ -61,17 +71,40 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const removeItinerary = (i: number) =>
     set("itinerary", tour.itinerary.filter((_, idx) => idx !== i));
 
-  const handleImageUpload = (i: number, file: File) => {
-    setUploadingIdx(i);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(i, e.target?.result as string);
-      setUploadingIdx(null);
-    };
-    reader.readAsDataURL(file);
+  // Pricing tiers
+  const setPricingGuests = (i: number, v: number) => {
+    const arr = [...tour.pricing];
+    arr[i] = { ...arr[i], guests: v };
+    set("pricing", arr);
   };
+  const setPricingPrice = (i: number, v: number) => {
+    const arr = [...tour.pricing];
+    arr[i] = { ...arr[i], price: v };
+    set("pricing", arr);
+  };
+  const addPricing = () => {
+    const next = (tour.pricing[tour.pricing.length - 1]?.guests ?? 0) + 1;
+    set("pricing", [...tour.pricing, { guests: next, price: 0 }]);
+  };
+  const removePricing = (i: number) =>
+    set("pricing", tour.pricing.filter((_, idx) => idx !== i));
 
   // Images
+  const handleImageUpload = async (i: number, file: File) => {
+    setUploadingIdx(i);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const { url } = await res.json();
+        setImage(i, url);
+      }
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
   const setImage = (i: number, v: string) => {
     const arr = [...tour.images];
     arr[i] = v;
@@ -89,8 +122,12 @@ export default function ListingEditor({ initial, isNew }: Props) {
       ...tour,
       id,
       highlights: tour.highlights.filter(Boolean),
+      includes: tour.includes.filter(Boolean),
+      excludes: tour.excludes.filter(Boolean),
+      beforeYouBook: tour.beforeYouBook.filter(Boolean),
       itinerary: tour.itinerary.filter((r) => r.activity),
       images: tour.images.filter(Boolean),
+      pricing: tour.pricing.filter((p) => p.guests > 0),
     };
     const res = await fetch(
       isNew ? "/api/admin/listings" : `/api/admin/listings/${id}`,
@@ -127,6 +164,31 @@ export default function ListingEditor({ initial, isNew }: Props) {
 
   const inputClass = "w-full border-b border-stone-200 bg-transparent py-2.5 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors";
   const textareaClass = "w-full border border-stone-200 bg-transparent p-3 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors resize-none";
+
+  const StringList = ({
+    items,
+    handlers,
+    placeholder,
+  }: {
+    items: string[];
+    handlers: ReturnType<typeof makeListHandlers>;
+    placeholder: string;
+  }) => (
+    <>
+      {items.map((h, i) => (
+        <div key={i} className="flex gap-3 items-center">
+          <input
+            className={`${inputClass} flex-1`}
+            value={h}
+            onChange={(e) => handlers.set(i, e.target.value)}
+            placeholder={placeholder}
+          />
+          <button onClick={() => handlers.remove(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none">×</button>
+        </div>
+      ))}
+      <button onClick={handlers.add} className="text-xs text-[#016812] hover:underline">+ Add</button>
+    </>
+  );
 
   return (
     <div className="p-8 max-w-3xl">
@@ -170,9 +232,45 @@ export default function ListingEditor({ initial, isNew }: Props) {
             ))}
             {field("Duration", <input className={inputClass} value={tour.duration} onChange={(e) => set("duration", e.target.value)} placeholder="e.g. Full day (7–8 hours)" />)}
             {field("Group Size", <input className={inputClass} value={tour.groupSize} onChange={(e) => set("groupSize", e.target.value)} placeholder="e.g. 1–4 guests" />)}
-            {field("Price From", <input className={inputClass} value={tour.priceFrom} onChange={(e) => set("priceFrom", e.target.value)} placeholder="e.g. From ¥45,000 per group" />)}
+            {field("Price From (テキスト表示)", <input className={inputClass} value={tour.priceFrom} onChange={(e) => set("priceFrom", e.target.value)} placeholder="e.g. From ¥45,000 — 人数別料金未設定時に表示" />)}
           </div>
           {field("Description", <textarea className={textareaClass} rows={4} value={tour.description} onChange={(e) => set("description", e.target.value)} placeholder="Main description shown on the tour page." />)}
+        </div>
+
+        {/* Pricing tiers */}
+        <div className="bg-white border border-stone-100 p-6 space-y-4">
+          <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Pricing by Guest Count</h2>
+          <p className="text-xs text-stone-400">設定すると、ツアーページで人数を選んだ時に料金が表示されます。</p>
+          {tour.pricing.map((p, i) => (
+            <div key={i} className="flex gap-3 items-center">
+              <div className="flex items-center gap-2 w-40 flex-shrink-0">
+                <input
+                  type="number"
+                  min={1}
+                  className={`${inputClass} w-16`}
+                  value={p.guests}
+                  onChange={(e) => setPricingGuests(i, Number(e.target.value))}
+                  placeholder="2"
+                />
+                <span className="text-xs text-stone-400 whitespace-nowrap">guests</span>
+              </div>
+              <span className="text-stone-300">→</span>
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-sm text-stone-400">¥</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  className={`${inputClass} flex-1`}
+                  value={p.price}
+                  onChange={(e) => setPricingPrice(i, Number(e.target.value))}
+                  placeholder="45000"
+                />
+              </div>
+              <button onClick={() => removePricing(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none">×</button>
+            </div>
+          ))}
+          <button onClick={addPricing} className="text-xs text-[#016812] hover:underline">+ Add price tier</button>
         </div>
 
         {/* Images */}
@@ -223,13 +321,28 @@ export default function ListingEditor({ initial, isNew }: Props) {
         {/* Highlights */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Experience Highlights</h2>
-          {tour.highlights.map((h, i) => (
-            <div key={i} className="flex gap-3 items-center">
-              <input className={`${inputClass} flex-1`} value={h} onChange={(e) => setHighlight(i, e.target.value)} placeholder={`Highlight ${i + 1}`} />
-              <button onClick={() => removeHighlight(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none">×</button>
-            </div>
-          ))}
-          <button onClick={addHighlight} className="text-xs text-[#016812] hover:underline">+ Add highlight</button>
+          <StringList items={tour.highlights} handlers={highlights} placeholder="Highlight" />
+        </div>
+
+        {/* Includes */}
+        <div className="bg-white border border-stone-100 p-6 space-y-4">
+          <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Includes</h2>
+          <p className="text-xs text-stone-400">ツアーに含まれるもの（例：ガイド料、昼食）</p>
+          <StringList items={tour.includes} handlers={includes} placeholder="e.g. Private English-speaking guide" />
+        </div>
+
+        {/* Excludes */}
+        <div className="bg-white border border-stone-100 p-6 space-y-4">
+          <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Excludes</h2>
+          <p className="text-xs text-stone-400">含まれないもの（例：交通費、入場料）</p>
+          <StringList items={tour.excludes} handlers={excludes} placeholder="e.g. Transportation to meeting point" />
+        </div>
+
+        {/* Before you book */}
+        <div className="bg-white border border-stone-100 p-6 space-y-4">
+          <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Before You Book</h2>
+          <p className="text-xs text-stone-400">予約前に知っておいてほしいこと（キャンセルポリシー、注意事項など）</p>
+          <StringList items={tour.beforeYouBook} handlers={beforeYouBook} placeholder="e.g. 72-hour cancellation policy applies" />
         </div>
 
         {/* Itinerary */}

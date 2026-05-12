@@ -17,8 +17,8 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-stone-100 text-stone-500",
 };
 
-export default function BookingsPage() {
-  const bookings = getBookings();
+export default async function BookingsPage() {
+  const bookings = await getBookings();
 
   return (
     <div className="p-8">

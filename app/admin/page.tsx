@@ -3,9 +3,8 @@ import { getTours, getBookings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminDashboard() {
-  const tours = getTours();
-  const bookings = getBookings();
+export default async function AdminDashboard() {
+  const [tours, bookings] = await Promise.all([getTours(), getBookings()]);
   const newBookings = bookings.filter((b) => b.status === "new");
 
   return (

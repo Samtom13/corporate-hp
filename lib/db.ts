@@ -1,9 +1,5 @@
-import fs from "fs";
-import path from "path";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const TOURS_FILE = path.join(DATA_DIR, "tours.json");
-const BOOKINGS_FILE = path.join(DATA_DIR, "bookings.json");
+import { kv } from "@vercel/kv";
+import toursData from "@/data/tours.json";
 
 export type Tour = {
   id: string;
@@ -17,6 +13,10 @@ export type Tour = {
   highlights: string[];
   itinerary: { time: string; activity: string }[];
   images: string[];
+  pricing: { guests: number; price: number }[];
+  includes: string[];
+  excludes: string[];
+  beforeYouBook: string[];
 };
 
 export type Booking = {
@@ -34,65 +34,73 @@ export type Booking = {
   status: "new" | "contacted" | "confirmed" | "cancelled";
 };
 
-function read<T>(file: string): T[] {
-  try {
-    const raw = fs.readFileSync(file, "utf-8");
-    return JSON.parse(raw) as T[];
-  } catch {
-    return [];
-  }
-}
+const TOURS_KEY = "bond:tours";
+const BOOKINGS_KEY = "bond:bookings";
 
-function write<T>(file: string, data: T[]): void {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
-  } catch {
-    // Read-only filesystem in production (Vercel) — skip silently
-  }
+function withDefaults(t: object): Tour {
+  return {
+    ...({ pricing: [], includes: [], excludes: [], beforeYouBook: [] } as unknown as Tour),
+    ...(t as Tour),
+  };
 }
 
 // Tours
-export function getTours(): Tour[] {
-  return read<Tour>(TOURS_FILE);
+export async function getTours(): Promise<Tour[]> {
+  try {
+    const stored = await kv.get<Tour[]>(TOURS_KEY);
+    if (stored && stored.length > 0) return stored;
+    // Seed from bundled JSON on first run
+    const seed = (toursData as object[]).map(withDefaults);
+    await kv.set(TOURS_KEY, seed);
+    return seed;
+  } catch {
+    // KV not configured — fall back to static JSON (read-only)
+    return (toursData as object[]).map(withDefaults);
+  }
 }
 
-export function getTourById(id: string): Tour | undefined {
-  return getTours().find((t) => t.id === id);
+export async function getTourById(id: string): Promise<Tour | undefined> {
+  const tours = await getTours();
+  return tours.find((t) => t.id === id);
 }
 
-export function saveTour(tour: Tour): void {
-  const tours = getTours();
+export async function saveTour(tour: Tour): Promise<void> {
+  const tours = await getTours();
   const idx = tours.findIndex((t) => t.id === tour.id);
   if (idx >= 0) {
     tours[idx] = tour;
   } else {
     tours.push(tour);
   }
-  write(TOURS_FILE, tours);
+  await kv.set(TOURS_KEY, tours);
 }
 
-export function deleteTour(id: string): void {
-  const tours = getTours().filter((t) => t.id !== id);
-  write(TOURS_FILE, tours);
+export async function deleteTour(id: string): Promise<void> {
+  const tours = (await getTours()).filter((t) => t.id !== id);
+  await kv.set(TOURS_KEY, tours);
 }
 
 // Bookings
-export function getBookings(): Booking[] {
-  return read<Booking>(BOOKINGS_FILE);
+export async function getBookings(): Promise<Booking[]> {
+  try {
+    return (await kv.get<Booking[]>(BOOKINGS_KEY)) ?? [];
+  } catch {
+    return [];
+  }
 }
 
-export function getBookingById(id: string): Booking | undefined {
-  return getBookings().find((b) => b.id === id);
+export async function getBookingById(id: string): Promise<Booking | undefined> {
+  const bookings = await getBookings();
+  return bookings.find((b) => b.id === id);
 }
 
-export function saveBooking(booking: Booking): void {
-  const bookings = getBookings();
+export async function saveBooking(booking: Booking): Promise<void> {
+  const bookings = await getBookings();
   const idx = bookings.findIndex((b) => b.id === booking.id);
   if (idx >= 0) {
     bookings[idx] = booking;
   } else {
     bookings.unshift(booking); // newest first
   }
-  write(BOOKINGS_FILE, bookings);
+  await kv.set(BOOKINGS_KEY, bookings);
 }

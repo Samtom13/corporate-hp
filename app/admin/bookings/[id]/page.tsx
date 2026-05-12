@@ -9,7 +9,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function BookingDetailPage({ params }: Props) {
   const { id } = await params;
-  const booking = getBookingById(id);
+  const booking = await getBookingById(id);
   if (!booking) notFound();
 
   return (
