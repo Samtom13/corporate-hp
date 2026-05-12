@@ -1,6 +1,4 @@
 import { Resend } from "resend";
-import { saveBooking } from "@/lib/db";
-import type { Booking } from "@/lib/db";
 
 const ADMIN_EMAIL = "info@go-bond.jp";
 
@@ -23,22 +21,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Name and email are required." }, { status: 400 });
     }
 
-    // Save booking to JSON file (always, even if email fails)
-    const booking: Booking = {
-      id: `booking_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      createdAt: new Date().toISOString(),
-      name,
-      email,
-      whatsapp: whatsapp || undefined,
-      guests,
-      date: date || undefined,
-      flexibleDates: !!flexibleDates,
-      selectedTour: selectedTour || undefined,
-      selectedInterests: selectedInterests || [],
-      requests: requests || undefined,
-      status: "new",
-    };
-    saveBooking(booking);
+    const bookingId = `booking_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     const timestamp = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Tokyo",
@@ -91,7 +74,7 @@ export async function POST(request: Request) {
             <td style="padding: 10px 0; white-space: pre-line;">${requests || "—"}</td>
           </tr>
         </table>
-        <p style="margin-top: 32px; font-size: 11px; color: #aaa;">Submitted at ${timestamp} (JST) · ID: ${booking.id}</p>
+        <p style="margin-top: 32px; font-size: 11px; color: #aaa;">Submitted at ${timestamp} (JST) · ID: ${bookingId}</p>
       </div>
     `;
 

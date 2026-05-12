@@ -44,8 +44,12 @@ function read<T>(file: string): T[] {
 }
 
 function write<T>(file: string, data: T[]): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Read-only filesystem in production (Vercel) — skip silently
+  }
 }
 
 // Tours

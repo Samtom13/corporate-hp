@@ -55,11 +55,6 @@ export default function AdminLogin() {
             {loading ? "..." : "Sign In"}
           </button>
         </form>
-        <p className="text-center text-xs text-stone-400 mt-6">
-          Default password: <code className="bg-stone-100 px-1 py-0.5">bond-admin-2025</code>
-          <br/>
-          Set <code className="bg-stone-100 px-1 py-0.5">ADMIN_TOKEN</code> in .env.local to change.
-        </p>
       </div>
     </div>
   );
