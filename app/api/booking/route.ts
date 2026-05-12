@@ -95,14 +95,14 @@ export async function POST(request: Request) {
     // Attempt to send both emails; log errors but don't fail the request
     const results = await Promise.allSettled([
       resend.emails.send({
-        from: "Bond <onboarding@resend.dev>",
+        from: "Bond <info@go-bond.jp>",
         to: [ADMIN_EMAIL],
         subject: `New booking request — ${name}`,
         html: adminHtml,
         replyTo: email,
       }),
       resend.emails.send({
-        from: "Bond <onboarding@resend.dev>",
+        from: "Bond <info@go-bond.jp>",
         to: [email],
         subject: "We received your request — Bond",
         html: guestHtml,
