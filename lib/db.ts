@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { put, list } from "@vercel/blob";
 import toursData from "@/data/tours.json";
 
 export type Tour = {
@@ -34,8 +34,8 @@ export type Booking = {
   status: "new" | "contacted" | "confirmed" | "cancelled";
 };
 
-const TOURS_KEY = "bond:tours";
-const BOOKINGS_KEY = "bond:bookings";
+const TOURS_PATH = "bond-data/tours.json";
+const BOOKINGS_PATH = "bond-data/bookings.json";
 
 function withDefaults(t: object): Tour {
   return {
@@ -44,19 +44,41 @@ function withDefaults(t: object): Tour {
   };
 }
 
+async function readBlob<T>(pathname: string): Promise<T[] | null> {
+  try {
+    const { blobs } = await list({ prefix: pathname });
+    const blob = blobs.find((b) => b.pathname === pathname);
+    if (!blob) return null;
+    // Fetch with no cache to always get fresh data
+    const res = await fetch(blob.url, { cache: "no-store" });
+    if (!res.ok) return null;
+    return (await res.json()) as T[];
+  } catch {
+    return null;
+  }
+}
+
+async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
+  await put(pathname, JSON.stringify(data), {
+    access: "public",
+    addRandomSuffix: false,
+    contentType: "application/json",
+    cacheControlMaxAge: 0, // no CDN caching — always serve fresh
+  });
+}
+
 // Tours
 export async function getTours(): Promise<Tour[]> {
+  const stored = await readBlob<Tour>(TOURS_PATH);
+  if (stored && stored.length > 0) return stored;
+  // Seed from bundled JSON on first run
+  const seed = (toursData as object[]).map(withDefaults);
   try {
-    const stored = await kv.get<Tour[]>(TOURS_KEY);
-    if (stored && stored.length > 0) return stored;
-    // Seed from bundled JSON on first run
-    const seed = (toursData as object[]).map(withDefaults);
-    await kv.set(TOURS_KEY, seed);
-    return seed;
+    await writeBlob(TOURS_PATH, seed);
   } catch {
-    // KV not configured — fall back to static JSON (read-only)
-    return (toursData as object[]).map(withDefaults);
+    // BLOB_READ_WRITE_TOKEN not set (local dev) — return static data
   }
+  return seed;
 }
 
 export async function getTourById(id: string): Promise<Tour | undefined> {
@@ -72,21 +94,17 @@ export async function saveTour(tour: Tour): Promise<void> {
   } else {
     tours.push(tour);
   }
-  await kv.set(TOURS_KEY, tours);
+  await writeBlob(TOURS_PATH, tours);
 }
 
 export async function deleteTour(id: string): Promise<void> {
   const tours = (await getTours()).filter((t) => t.id !== id);
-  await kv.set(TOURS_KEY, tours);
+  await writeBlob(TOURS_PATH, tours);
 }
 
 // Bookings
 export async function getBookings(): Promise<Booking[]> {
-  try {
-    return (await kv.get<Booking[]>(BOOKINGS_KEY)) ?? [];
-  } catch {
-    return [];
-  }
+  return (await readBlob<Booking>(BOOKINGS_PATH)) ?? [];
 }
 
 export async function getBookingById(id: string): Promise<Booking | undefined> {
@@ -102,5 +120,5 @@ export async function saveBooking(booking: Booking): Promise<void> {
   } else {
     bookings.unshift(booking); // newest first
   }
-  await kv.set(BOOKINGS_KEY, bookings);
+  await writeBlob(BOOKINGS_PATH, bookings);
 }
