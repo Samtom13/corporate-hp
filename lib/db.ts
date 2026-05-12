@@ -1,3 +1,4 @@
+import { put } from "@vercel/blob";
 import toursData from "@/data/tours.json";
 
 export type Tour = {
@@ -33,7 +34,6 @@ export type Booking = {
   status: "new" | "contacted" | "confirmed" | "cancelled";
 };
 
-const BLOB_BASE = "https://blob.vercel-storage.com";
 const TOURS_PATH = "bond-data/tours.json";
 const BOOKINGS_PATH = "bond-data/bookings.json";
 
@@ -44,62 +44,58 @@ function withDefaults(t: object): Tour {
   };
 }
 
-function getToken(): string | null {
-  return process.env.BLOB_READ_WRITE_TOKEN ?? null;
-}
-
-/** Find the blob URL for a given pathname via the list API */
-async function getBlobUrl(pathname: string): Promise<string | null> {
-  const token = getToken();
+/**
+ * Derive the public Blob base URL from BLOB_READ_WRITE_TOKEN.
+ * Token format: vercel_blob_rw_{storeId}_{secret}
+ * Public URL:   https://{storeId}.public.blob.vercel-storage.com
+ */
+function getBlobBaseUrl(): string | null {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) return null;
+
+  if (token.startsWith("vercel_blob_rw_")) {
+    const rest = token.slice("vercel_blob_rw_".length); // "{storeId}_{secret}"
+    const lastUnderscore = rest.lastIndexOf("_");
+    if (lastUnderscore > 0) {
+      const storeId = rest.slice(0, lastUnderscore);
+      return `https://${storeId}.public.blob.vercel-storage.com`;
+    }
+  }
+
+  // JWT format fallback
   try {
-    const res = await fetch(
-      `${BLOB_BASE}?prefix=${encodeURIComponent(pathname)}&limit=10`,
-      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64").toString()
     );
-    if (!res.ok) return null;
-    const { blobs } = await res.json() as { blobs: { pathname: string; url: string }[] };
-    return blobs.find((b) => b.pathname === pathname)?.url ?? null;
-  } catch {
-    return null;
-  }
+    if (payload.sub) {
+      return `https://${payload.sub}.public.blob.vercel-storage.com`;
+    }
+  } catch { /* */ }
+
+  return null;
 }
 
-/** Read JSON array from Vercel Blob */
+/** Read JSON array directly from the public blob URL (no list() needed) */
 async function readBlob<T>(pathname: string): Promise<T[] | null> {
-  const url = await getBlobUrl(pathname);
-  if (!url) return null;
+  const baseUrl = getBlobBaseUrl();
+  if (!baseUrl) return null;
   try {
-    // fetch with Authorization bypasses CDN cache
-    const token = getToken()!;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
+    const res = await fetch(`${baseUrl}/${pathname}`, { cache: "no-store" });
     if (!res.ok) return null;
-    return await res.json() as T[];
+    return (await res.json()) as T[];
   } catch {
     return null;
   }
 }
 
-/** Write JSON array to Vercel Blob (overwrites same path) */
+/** Write JSON array via @vercel/blob put() — SDK handles token/store auth correctly */
 async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
-  const token = getToken();
-  if (!token) throw new Error("BLOB_READ_WRITE_TOKEN not set");
-  const res = await fetch(`${BLOB_BASE}/${pathname}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "x-content-type": "application/json",
-    },
-    body: JSON.stringify(data),
+  await put(pathname, JSON.stringify(data), {
+    access: "public",
+    addRandomSuffix: false,
+    contentType: "application/json",
+    cacheControlMaxAge: 0, // no CDN caching — always serve fresh
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Blob write failed ${res.status}: ${text}`);
-  }
 }
 
 // ── Tours ──────────────────────────────────────────────
@@ -107,12 +103,12 @@ async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
 export async function getTours(): Promise<Tour[]> {
   const stored = await readBlob<Tour>(TOURS_PATH);
   if (stored && stored.length > 0) return stored;
-  // First run: seed from bundled static JSON
+  // First run: seed from bundled static JSON and persist
   const seed = (toursData as object[]).map(withDefaults);
   try {
     await writeBlob(TOURS_PATH, seed);
   } catch {
-    // Token not set in local dev — return static data as read-only
+    // Token not set or blob not reachable — return static data
   }
   return seed;
 }
