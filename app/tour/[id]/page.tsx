@@ -132,12 +132,14 @@ export default async function TourPage({ params }: Props) {
                   <div className="space-y-0">
                     {tour.itinerary.map((item, i) => (
                       <div key={i} className="flex gap-6 py-5 border-b border-stone-100 last:border-b-0">
-                        <span className="text-xs text-[#016812] font-medium w-12 flex-shrink-0 mt-0.5">
+                        <span className="text-xs text-[#016812] font-medium whitespace-nowrap flex-shrink-0 mt-0.5">
                           {item.time}
                         </span>
-                        <span className="text-stone-600 font-light text-sm leading-relaxed">
-                          {item.activity}
-                        </span>
+                        {item.activity && (
+                          <span className="text-stone-600 font-light text-sm leading-relaxed">
+                            {item.activity}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
