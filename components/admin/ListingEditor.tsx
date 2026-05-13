@@ -433,20 +433,22 @@ export default function ListingEditor({ initial, isNew }: Props) {
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Sample Itinerary</h2>
           {tour.itinerary.map((row, i) => (
-            <div key={i} className="flex gap-3 items-center">
-              <input
-                className={`${inputClass} w-36 flex-shrink-0`}
-                value={row.time}
-                onChange={(e) => setItinerary(i, "time", e.target.value)}
-                placeholder="09:00"
-              />
-              <input
-                className={`${inputClass} flex-1`}
-                value={row.activity}
-                onChange={(e) => setItinerary(i, "activity", e.target.value)}
-                placeholder="Activity description"
-              />
-              <button onClick={() => removeItinerary(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none">×</button>
+            <div key={i} className="flex gap-3 items-start border-b border-stone-50 pb-4 last:border-b-0 last:pb-0">
+              <div className="flex-1 space-y-1">
+                <input
+                  className={inputClass}
+                  value={row.time}
+                  onChange={(e) => setItinerary(i, "time", e.target.value)}
+                  placeholder="時間・場所（例: 09:00 – Hotel Pick-up）"
+                />
+                <input
+                  className={inputClass}
+                  value={row.activity}
+                  onChange={(e) => setItinerary(i, "activity", e.target.value)}
+                  placeholder="説明（例: Meet your guide at Kyoto Station）"
+                />
+              </div>
+              <button onClick={() => removeItinerary(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none mt-2 flex-shrink-0">×</button>
             </div>
           ))}
           <button onClick={addItinerary} className="text-xs text-[#016812] hover:underline">+ Add step</button>
