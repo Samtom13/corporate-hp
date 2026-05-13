@@ -13,14 +13,34 @@ export default function TourSidebar({ tour }: Props) {
     ? [...tour.pricing].sort((a, b) => a.guests - b.guests)
     : [];
 
-  const [selectedGuests, setSelectedGuests] = useState<number | null>(
-    sorted.length > 0 ? sorted[0].guests : null
-  );
+  // Start with null so no price is shown until the user selects
+  const [selectedGuests, setSelectedGuests] = useState<number | null>(null);
 
-  const selectedPrice = sorted.find((p) => p.guests === selectedGuests)?.price ?? null;
+  const selectedPrice =
+    selectedGuests !== null
+      ? (sorted.find((p) => p.guests === selectedGuests)?.price ?? null)
+      : null;
+
+  // "From" label: use priceFrom text, or derive from cheapest tier
+  const fromLabel = tour.priceFrom
+    ? tour.priceFrom
+    : sorted.length > 0
+    ? `From ¥${sorted[0].price.toLocaleString()} per person`
+    : null;
 
   return (
     <div className="sticky top-28 bg-[#F5F4F2] p-8 space-y-6">
+
+      {/* From price — always shown at top if available */}
+      {fromLabel && (
+        <div className="border-b border-stone-200 pb-5">
+          <p className="text-xs text-stone-400 mb-1">From</p>
+          <p className="text-2xl font-light text-[#1A1A1A]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+            {fromLabel}
+          </p>
+        </div>
+      )}
+
       <div>
         <p className="text-xs tracking-widest uppercase text-stone-400 mb-2">Duration</p>
         <p className="text-sm text-[#1A1A1A] font-light">{tour.duration}</p>
@@ -31,40 +51,40 @@ export default function TourSidebar({ tour }: Props) {
       </div>
 
       {/* Pricing */}
-      <div>
-        <p className="text-xs tracking-widest uppercase text-stone-400 mb-3">Pricing</p>
-        {hasPricing ? (
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-stone-400 mb-1.5 block">Number of guests</label>
-              <select
-                value={selectedGuests ?? ""}
-                onChange={(e) => setSelectedGuests(Number(e.target.value))}
-                className="w-full border-b border-stone-300 bg-transparent py-2 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors cursor-pointer appearance-none"
-              >
-                {sorted.map((p) => (
-                  <option key={p.guests} value={p.guests}>
-                    {p.guests} {p.guests === 1 ? "guest" : "guests"}
-                  </option>
-                ))}
-              </select>
+      {hasPricing && (
+        <div>
+          <p className="text-xs tracking-widest uppercase text-stone-400 mb-3">Number of guests</p>
+          {/* Select with visible ▼ arrow */}
+          <div className="relative">
+            <select
+              value={selectedGuests ?? ""}
+              onChange={(e) =>
+                setSelectedGuests(e.target.value === "" ? null : Number(e.target.value))
+              }
+              className="w-full border-b border-stone-300 bg-transparent py-2 pr-7 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors cursor-pointer appearance-none"
+            >
+              <option value="">— Select guests —</option>
+              {sorted.map((p) => (
+                <option key={p.guests} value={p.guests}>
+                  {p.guests} {p.guests === 1 ? "guest" : "guests"}
+                </option>
+              ))}
+            </select>
+            {/* Custom dropdown arrow */}
+            <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-stone-400 text-xs">▼</span>
+          </div>
+
+          {/* Price — only shown after guest selection */}
+          {selectedPrice !== null && (
+            <div className="mt-4">
+              <p className="text-2xl font-light text-[#1A1A1A]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                ¥{selectedPrice.toLocaleString()}
+              </p>
+              <p className="text-xs text-stone-400 mt-1">per person</p>
             </div>
-            {selectedPrice !== null && (
-              <div className="pt-1">
-                <p className="text-2xl font-light text-[#1A1A1A]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                  ¥{selectedPrice.toLocaleString()}
-                </p>
-                <p className="text-xs text-stone-400 mt-1">per group · exact price confirmed after request</p>
-              </div>
-            )}
-          </div>
-        ) : tour.priceFrom ? (
-          <div>
-            <p className="text-sm text-[#1A1A1A] font-light">{tour.priceFrom}</p>
-            <p className="text-xs text-stone-400 mt-1">Exact price confirmed after your request.</p>
-          </div>
-        ) : null}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="border-t border-stone-200 pt-6">
         <p className="text-xs text-stone-400 leading-relaxed mb-6">
