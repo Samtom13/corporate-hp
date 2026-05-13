@@ -8,6 +8,47 @@ type Props = {
   isNew?: boolean;
 };
 
+// ── Defined OUTSIDE ListingEditor to prevent remount on every keystroke ──
+const INPUT_CLASS = "w-full border-b border-stone-200 bg-transparent py-2.5 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors";
+
+function StringList({
+  items,
+  onSet,
+  onAdd,
+  onRemove,
+  placeholder,
+}: {
+  items: string[];
+  onSet: (i: number, v: string) => void;
+  onAdd: () => void;
+  onRemove: (i: number) => void;
+  placeholder: string;
+}) {
+  return (
+    <>
+      {items.map((h, i) => (
+        <div key={i} className="flex gap-3 items-center">
+          <input
+            className={`${INPUT_CLASS} flex-1`}
+            value={h}
+            onChange={(e) => onSet(i, e.target.value)}
+            placeholder={placeholder}
+          />
+          <button
+            onClick={() => onRemove(i)}
+            className="text-stone-300 hover:text-red-400 text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <button onClick={onAdd} className="text-xs text-[#016812] hover:underline">
+        + Add
+      </button>
+    </>
+  );
+}
+
 const TAGS = ["Culture", "Nature", "Food", "Tradition", "History", "Art"];
 
 function toId(title: string) {
@@ -171,33 +212,8 @@ export default function ListingEditor({ initial, isNew }: Props) {
     </div>
   );
 
-  const inputClass = "w-full border-b border-stone-200 bg-transparent py-2.5 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors";
+  const inputClass = INPUT_CLASS;
   const textareaClass = "w-full border border-stone-200 bg-transparent p-3 text-sm text-[#1A1A1A] font-light focus:outline-none focus:border-[#016812] transition-colors resize-none";
-
-  const StringList = ({
-    items,
-    handlers,
-    placeholder,
-  }: {
-    items: string[];
-    handlers: ReturnType<typeof makeListHandlers>;
-    placeholder: string;
-  }) => (
-    <>
-      {items.map((h, i) => (
-        <div key={i} className="flex gap-3 items-center">
-          <input
-            className={`${inputClass} flex-1`}
-            value={h}
-            onChange={(e) => handlers.set(i, e.target.value)}
-            placeholder={placeholder}
-          />
-          <button onClick={() => handlers.remove(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none">×</button>
-        </div>
-      ))}
-      <button onClick={handlers.add} className="text-xs text-[#016812] hover:underline">+ Add</button>
-    </>
-  );
 
   return (
     <div className="p-8 max-w-3xl">
@@ -330,28 +346,28 @@ export default function ListingEditor({ initial, isNew }: Props) {
         {/* Highlights */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Experience Highlights</h2>
-          <StringList items={tour.highlights} handlers={highlights} placeholder="Highlight" />
+          <StringList items={tour.highlights} onSet={(i, v) => highlights.set(i, v)} onAdd={highlights.add} onRemove={(i) => highlights.remove(i)} placeholder="Highlight" />
         </div>
 
         {/* Includes */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Includes</h2>
           <p className="text-xs text-stone-400">ツアーに含まれるもの（例：ガイド料、昼食）</p>
-          <StringList items={tour.includes} handlers={includes} placeholder="e.g. Private English-speaking guide" />
+          <StringList items={tour.includes} onSet={(i, v) => includes.set(i, v)} onAdd={includes.add} onRemove={(i) => includes.remove(i)} placeholder="e.g. Private English-speaking guide" />
         </div>
 
         {/* Excludes */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Excludes</h2>
           <p className="text-xs text-stone-400">含まれないもの（例：交通費、入場料）</p>
-          <StringList items={tour.excludes} handlers={excludes} placeholder="e.g. Transportation to meeting point" />
+          <StringList items={tour.excludes} onSet={(i, v) => excludes.set(i, v)} onAdd={excludes.add} onRemove={(i) => excludes.remove(i)} placeholder="e.g. Transportation to meeting point" />
         </div>
 
         {/* Before you book */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
           <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Before You Book</h2>
           <p className="text-xs text-stone-400">予約前に知っておいてほしいこと（キャンセルポリシー、注意事項など）</p>
-          <StringList items={tour.beforeYouBook} handlers={beforeYouBook} placeholder="e.g. 72-hour cancellation policy applies" />
+          <StringList items={tour.beforeYouBook} onSet={(i, v) => beforeYouBook.set(i, v)} onAdd={beforeYouBook.add} onRemove={(i) => beforeYouBook.remove(i)} placeholder="e.g. 72-hour cancellation policy applies" />
         </div>
 
         {/* Itinerary */}
