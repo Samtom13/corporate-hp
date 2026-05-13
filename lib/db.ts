@@ -93,8 +93,9 @@ async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
   await put(pathname, JSON.stringify(data), {
     access: "public",
     addRandomSuffix: false,
+    allowOverwrite: true,
     contentType: "application/json",
-    cacheControlMaxAge: 0, // no CDN caching — always serve fresh
+    cacheControlMaxAge: 0,
   });
 }
 
