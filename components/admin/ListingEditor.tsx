@@ -87,15 +87,21 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const set = (key: keyof Tour, value: unknown) =>
     setTour((prev) => ({ ...prev, [key]: value }));
 
-  // String list helpers
+  // String list helpers — functional setState to avoid stale closure
   const makeListHandlers = (key: "highlights" | "includes" | "excludes" | "beforeYouBook") => ({
     set: (i: number, v: string) => {
-      const arr = [...(tour[key] as string[])];
-      arr[i] = v;
-      set(key, arr);
+      setTour((prev) => {
+        const arr = [...(prev[key] as string[])];
+        arr[i] = v;
+        return { ...prev, [key]: arr };
+      });
     },
-    add: () => set(key, [...(tour[key] as string[]), ""]),
-    remove: (i: number) => set(key, (tour[key] as string[]).filter((_, idx) => idx !== i)),
+    add: () => setTour((prev) => ({ ...prev, [key]: [...(prev[key] as string[]), ""] })),
+    remove: (i: number) =>
+      setTour((prev) => ({
+        ...prev,
+        [key]: (prev[key] as string[]).filter((_, idx) => idx !== i),
+      })),
   });
 
   const highlights = makeListHandlers("highlights");
@@ -103,15 +109,24 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const excludes = makeListHandlers("excludes");
   const beforeYouBook = makeListHandlers("beforeYouBook");
 
-  // Itinerary
+  // Itinerary — functional setState to avoid stale closure
   const setItinerary = (i: number, field: "time" | "activity", v: string) => {
-    const arr = [...tour.itinerary];
-    arr[i] = { ...arr[i], [field]: v };
-    set("itinerary", arr);
+    setTour((prev) => {
+      const arr = [...prev.itinerary];
+      arr[i] = { ...arr[i], [field]: v };
+      return { ...prev, itinerary: arr };
+    });
   };
-  const addItinerary = () => set("itinerary", [...tour.itinerary, { time: "", activity: "" }]);
+  const addItinerary = () =>
+    setTour((prev) => ({
+      ...prev,
+      itinerary: [...prev.itinerary, { time: "", activity: "" }],
+    }));
   const removeItinerary = (i: number) =>
-    set("itinerary", tour.itinerary.filter((_, idx) => idx !== i));
+    setTour((prev) => ({
+      ...prev,
+      itinerary: prev.itinerary.filter((_, idx) => idx !== i),
+    }));
 
   // Pricing tiers
   const setPricingGuests = (i: number, v: number) => {
@@ -189,7 +204,7 @@ export default function ListingEditor({ initial, isNew }: Props) {
       includes: tour.includes.filter(Boolean),
       excludes: tour.excludes.filter(Boolean),
       beforeYouBook: tour.beforeYouBook.filter(Boolean),
-      itinerary: tour.itinerary.filter((r) => r.activity),
+      itinerary: tour.itinerary.filter((r) => r.time || r.activity),
       images: tour.images.filter(Boolean),
       pricing: tour.pricing.filter((p) => p.guests > 0),
     };
@@ -420,7 +435,7 @@ export default function ListingEditor({ initial, isNew }: Props) {
           {tour.itinerary.map((row, i) => (
             <div key={i} className="flex gap-3 items-center">
               <input
-                className={`${inputClass} w-20 flex-shrink-0`}
+                className={`${inputClass} w-36 flex-shrink-0`}
                 value={row.time}
                 onChange={(e) => setItinerary(i, "time", e.target.value)}
                 placeholder="09:00"
