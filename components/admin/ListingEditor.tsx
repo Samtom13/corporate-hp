@@ -63,7 +63,8 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
-  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  // Track which slot indices are currently uploading
+  const [uploadingSet, setUploadingSet] = useState<Set<number>>(new Set());
 
   const [tour, setTour] = useState<Tour>({
     id: initial.id ?? "",
@@ -130,30 +131,52 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const removePricing = (i: number) =>
     set("pricing", tour.pricing.filter((_, idx) => idx !== i));
 
-  // Images
-  const handleImageUpload = async (i: number, file: File) => {
-    setUploadingIdx(i);
-    const formData = new FormData();
-    formData.append("file", file);
+  // Images — use functional setState to avoid stale closure overwriting other slots
+  const setImageAtIdx = (i: number, v: string) => {
+    setTour((prev) => {
+      const arr = [...prev.images];
+      arr[i] = v;
+      return { ...prev, images: arr };
+    });
+  };
+
+  const uploadOneFile = async (i: number, file: File) => {
+    setUploadingSet((prev) => new Set(prev).add(i));
     try {
+      const formData = new FormData();
+      formData.append("file", file);
       const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
       if (res.ok) {
         const { url } = await res.json();
-        setImage(i, url);
+        setImageAtIdx(i, url);
       }
     } finally {
-      setUploadingIdx(null);
+      setUploadingSet((prev) => { const s = new Set(prev); s.delete(i); return s; });
     }
   };
 
-  const setImage = (i: number, v: string) => {
-    const arr = [...tour.images];
-    arr[i] = v;
-    set("images", arr);
+  // Replace a single existing slot
+  const handleImageUpload = (i: number, file: File) => uploadOneFile(i, file);
+
+  // Append multiple files at once
+  const handleMultiUpload = (files: FileList) => {
+    const fileArr = Array.from(files);
+    // Append empty placeholder slots first so indices are stable
+    setTour((prev) => {
+      const startIdx = prev.images.length;
+      const newImages = [...prev.images, ...fileArr.map(() => "")];
+      // Kick off uploads after state is committed
+      setTimeout(() => {
+        fileArr.forEach((file, fi) => uploadOneFile(startIdx + fi, file));
+      }, 0);
+      return { ...prev, images: newImages };
+    });
   };
-  const addImage = () => set("images", [...tour.images, ""]);
+
+  const setImage = (i: number, v: string) => setImageAtIdx(i, v);
+  const addImage = () => setTour((prev) => ({ ...prev, images: [...prev.images, ""] }));
   const removeImage = (i: number) =>
-    set("images", tour.images.filter((_, idx) => idx !== i));
+    setTour((prev) => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -300,10 +323,31 @@ export default function ListingEditor({ initial, isNew }: Props) {
 
         {/* Images */}
         <div className="bg-white border border-stone-100 p-6 space-y-4">
-          <h2 className="text-xs tracking-widest uppercase text-stone-400 border-b border-stone-100 pb-3">Photos</h2>
-          <p className="text-xs text-stone-400">最初の画像がメイン表示されます。ファイルをアップロードするかURLを入力してください。</p>
+          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <h2 className="text-xs tracking-widest uppercase text-stone-400">Photos</h2>
+            {/* Bulk upload button */}
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.multiple = true;
+                input.onchange = (e) => {
+                  const files = (e.target as HTMLInputElement).files;
+                  if (files && files.length > 0) handleMultiUpload(files);
+                };
+                input.click();
+              }}
+              className="text-xs text-[#016812] hover:underline"
+            >
+              + Upload multiple photos
+            </button>
+          </div>
+          <p className="text-xs text-stone-400">最初の画像がメイン表示されます。サムネイルをクリックで差し替え、またはURLを直接入力。</p>
           {tour.images.map((img, i) => (
             <div key={i} className="flex gap-3 items-start">
+              {/* Thumbnail — click to replace this slot */}
               <div
                 className="w-16 h-12 flex-shrink-0 border border-stone-200 flex items-center justify-center cursor-pointer hover:border-[#016812] transition-colors relative overflow-hidden"
                 onClick={() => {
@@ -323,7 +367,7 @@ export default function ListingEditor({ initial, isNew }: Props) {
                   if (file) handleImageUpload(i, file);
                 }}
               >
-                {uploadingIdx === i ? (
+                {uploadingSet.has(i) ? (
                   <span className="text-xs text-stone-400">...</span>
                 ) : img ? (
                   <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -335,12 +379,12 @@ export default function ListingEditor({ initial, isNew }: Props) {
                 className={`${inputClass} flex-1`}
                 value={img}
                 onChange={(e) => setImage(i, e.target.value)}
-                placeholder={`Image ${i + 1} URL（またはファイルをアップロード）`}
+                placeholder={`Image ${i + 1} URL`}
               />
               <button onClick={() => removeImage(i)} className="text-stone-300 hover:text-red-400 text-lg leading-none mt-2">×</button>
             </div>
           ))}
-          <button onClick={addImage} className="text-xs text-[#016812] hover:underline">+ Add image</button>
+          <button onClick={addImage} className="text-xs text-stone-400 hover:underline">+ Add URL slot</button>
         </div>
 
         {/* Highlights */}

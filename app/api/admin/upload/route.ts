@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("admin_token")?.value;
@@ -13,28 +14,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!blobToken) {
-    return NextResponse.json({ error: "Storage not configured" }, { status: 500 });
+  try {
+    const filename = `tours/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const blob = await put(filename, file, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch (e) {
+    console.error("Upload error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  const filename = `tours/${Date.now()}-${file.name}`;
-  const arrayBuffer = await file.arrayBuffer();
-
-  const res = await fetch(`https://blob.vercel-storage.com/${filename}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${blobToken}`,
-      "Content-Type": file.type,
-      "x-content-type": file.type,
-    },
-    body: arrayBuffer,
-  });
-
-  if (!res.ok) {
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-  }
-
-  const data = await res.json();
-  return NextResponse.json({ url: data.url });
 }
