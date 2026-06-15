@@ -75,16 +75,23 @@ function getBlobBaseUrl(): string | null {
   return null;
 }
 
-/** Read JSON array directly from the public blob URL (no list() needed) */
+/**
+ * Read JSON array directly from the public blob URL.
+ * Returns:
+ *   T[]   — success
+ *   []    — file not found (404) = first run, safe to seed
+ *   null  — fetch/network error = DO NOT overwrite blob
+ */
 async function readBlob<T>(pathname: string): Promise<T[] | null> {
   const baseUrl = getBlobBaseUrl();
   if (!baseUrl) return null;
   try {
     const res = await fetch(`${baseUrl}/${pathname}`, { cache: "no-store" });
-    if (!res.ok) return null;
+    if (res.status === 404) return [] as T[]; // first run
+    if (!res.ok) return null;                 // transient error — caller must not overwrite
     return (await res.json()) as T[];
   } catch {
-    return null;
+    return null; // network error — caller must not overwrite
   }
 }
 
@@ -103,15 +110,25 @@ async function writeBlob<T>(pathname: string, data: T[]): Promise<void> {
 
 export async function getTours(): Promise<Tour[]> {
   const stored = await readBlob<Tour>(TOURS_PATH);
-  if (stored && stored.length > 0) return stored;
-  // First run: seed from bundled static JSON and persist
-  const seed = (toursData as object[]).map(withDefaults);
-  try {
-    await writeBlob(TOURS_PATH, seed);
-  } catch {
-    // Token not set or blob not reachable — return static data
+
+  // null = fetch/network error → return static fallback WITHOUT overwriting blob
+  // (prevents user edits from being wiped on transient CDN/network failures)
+  if (stored === null) {
+    return (toursData as object[]).map(withDefaults);
   }
-  return seed;
+
+  // [] = 404 (first run) → seed and persist
+  if (stored.length === 0) {
+    const seed = (toursData as object[]).map(withDefaults);
+    try {
+      await writeBlob(TOURS_PATH, seed);
+    } catch {
+      // blob not reachable yet
+    }
+    return seed;
+  }
+
+  return stored.map(withDefaults);
 }
 
 export async function getTourById(id: string): Promise<Tour | undefined> {
