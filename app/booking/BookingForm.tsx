@@ -153,13 +153,14 @@ function FormInner({ tours }: { tours: Pick<Tour, "id" | "title" | "subtitle">[]
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label className="block text-xs tracking-widest uppercase text-stone-400 mb-3">
-            WhatsApp (optional)
+            WhatsApp <span className="text-[#016812]">*</span>
           </label>
           <input
+            required
             type="tel"
             value={form.whatsapp}
             onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-            placeholder="+1 234 567 8900"
+            placeholder="+81 90-1234-5678"
             className="w-full border-b border-stone-200 bg-transparent py-3 text-sm text-[#1A1A1A] font-light placeholder-stone-300 focus:outline-none focus:border-[#016812] transition-colors"
           />
         </div>

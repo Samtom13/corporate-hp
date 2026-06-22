@@ -19,8 +19,8 @@ export async function POST(request: Request) {
       requests,
     } = body;
 
-    if (!name || !email) {
-      return Response.json({ error: "Name and email are required." }, { status: 400 });
+    if (!name || !email || !whatsapp) {
+      return Response.json({ error: "Name, email, and WhatsApp are required." }, { status: 400 });
     }
 
     const booking: Booking = {
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       name,
       email,
-      whatsapp: whatsapp || undefined,
+      whatsapp,
       guests,
       date: date || undefined,
       flexibleDates: !!flexibleDates,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; width: 140px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Email</td>
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;"><a href="mailto:${email}" style="color: #1A1A1A;">${email}</a></td>
           </tr>
-          ${whatsapp ? `<tr><td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">WhatsApp</td><td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${whatsapp}</td></tr>` : ""}
+          <tr><td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">WhatsApp</td><td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;"><a href="https://wa.me/${whatsapp.replace(/[^\d]/g, "")}" style="color: #016812;">${whatsapp}</a></td></tr>
           <tr>
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Guests</td>
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${guests}</td>

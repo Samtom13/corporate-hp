@@ -24,7 +24,7 @@ export type Booking = {
   createdAt: string;
   name: string;
   email: string;
-  whatsapp?: string;
+  whatsapp: string;
   guests: string;
   date?: string;
   flexibleDates: boolean;
