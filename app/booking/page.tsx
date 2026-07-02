@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import BookingForm from "./BookingForm";
 import { getTours } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Request a Private Kyoto Tour — No Upfront Payment",
+  description:
+    "Request a personalized private tour in Kyoto. Tell us your dates, group, and interests — we design your experience and confirm every detail before any payment.",
+  alternates: { canonical: "/booking" },
+};
 
 export default async function BookingPage() {
   const tours = await getTours();

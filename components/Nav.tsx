@@ -36,6 +36,7 @@ export default function Nav() {
             { label: "Experiences", href: "/#experiences" },
             { label: "How It Works", href: "/#how-it-works" },
             { label: "About", href: "/#about" },
+            { label: "FAQ", href: "/faq" },
           ].map((link) => (
             <Link
               key={link.label}
@@ -78,6 +79,7 @@ export default function Nav() {
             { label: "Experiences", href: "/#experiences" },
             { label: "How It Works", href: "/#how-it-works" },
             { label: "About", href: "/#about" },
+            { label: "FAQ", href: "/faq" },
           ].map((link) => (
             <Link
               key={link.label}

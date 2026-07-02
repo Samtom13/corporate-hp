@@ -1,9 +1,21 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { getTours } from "@/lib/db";
+import {
+  SITE_URL,
+  SITE_NAME,
+  organizationJsonLd,
+  tourJsonLd,
+  jsonLdDocument,
+} from "@/lib/site";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const steps = [
   {
@@ -47,8 +59,40 @@ const testimonials = [
 export default async function HomePage() {
   const experiences = await getTours();
 
+  const jsonLd = jsonLdDocument([
+    {
+      ...organizationJsonLd(),
+      review: testimonials.map((t) => ({
+        "@type": "Review",
+        reviewBody: t.quote,
+        author: { "@type": "Person", name: t.name },
+      })),
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: SITE_NAME,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#tours`,
+      name: "Private tours in Kyoto by Bond",
+      itemListElement: experiences.map((tour, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: tourJsonLd(tour),
+      })),
+    },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Nav />
       <main>
         {/* ── Hero ── */}

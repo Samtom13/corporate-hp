@@ -1,9 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TourSidebar from "@/components/TourSidebar";
 import { getTourById, getTours } from "@/lib/db";
+import { cleanText, tourJsonLd, organizationJsonLd, jsonLdDocument } from "@/lib/site";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -16,13 +18,49 @@ export async function generateStaticParams() {
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const tour = await getTourById(id);
+  if (!tour) return {};
+
+  const description = cleanText(
+    `${tour.duration} private tour in Kyoto, ${tour.priceFrom}. ${tour.description}`,
+    160
+  );
+
+  return {
+    title: tour.title,
+    description,
+    alternates: { canonical: `/tour/${tour.id}` },
+    openGraph: {
+      title: tour.title,
+      description,
+      url: `/tour/${tour.id}`,
+      type: "website",
+      images: tour.images.length > 0 ? [{ url: tour.images[0] }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: tour.title,
+      description,
+      images: tour.images.length > 0 ? [tour.images[0]] : undefined,
+    },
+  };
+}
+
 export default async function TourPage({ params }: Props) {
   const { id } = await params;
   const tour = await getTourById(id);
   if (!tour) notFound();
 
+  const jsonLd = jsonLdDocument([organizationJsonLd(), tourJsonLd(tour)]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Nav />
       <main className="pt-0">
         {/* Hero */}

@@ -27,6 +27,7 @@ export default function Footer() {
                 { label: "Experiences", href: "/#experiences" },
                 { label: "How It Works", href: "/#how-it-works" },
                 { label: "About Bond", href: "/#about" },
+                { label: "FAQ", href: "/faq" },
                 { label: "Request Experience", href: "/booking" },
               ].map((link) => (
                 <Link
@@ -71,8 +72,12 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-white/30 text-xs">© 2025 Bond. All rights reserved.</p>
-          <p className="text-white/30 text-xs tracking-wide">Kyoto, Japan</p>
+          <p className="text-white/30 text-xs">
+            © {new Date().getFullYear()} Bond. All rights reserved.
+          </p>
+          <p className="text-white/30 text-xs tracking-wide">
+            Operated by 株式会社Bond — Kyoto, Japan · Since 2019
+          </p>
         </div>
       </div>
     </footer>
