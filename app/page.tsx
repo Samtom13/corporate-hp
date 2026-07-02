@@ -2,10 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import Testimonials from "@/components/Testimonials";
 import { getTours } from "@/lib/db";
 import {
   SITE_URL,
   SITE_NAME,
+  REVIEW_RATING,
+  REVIEW_COUNT,
   organizationJsonLd,
   tourJsonLd,
   jsonLdDocument,
@@ -37,22 +40,40 @@ const steps = [
 
 const testimonials = [
   {
-    quote:
-      "Bond didn't just show me Kyoto. They helped me understand it. I left feeling like I had a genuine connection to a place I'd only dreamed about.",
-    name: "Sarah M.",
-    origin: "New York, USA",
+    name: "Hend Alawadhi",
+    country: "UAE",
+    platform: "Klook",
+    text: "Our Kyoto tour was absolutely wonderful, thanks to our outstanding guide. He was extremely well-mannered, very cooperative, and genuinely friendly, which made the entire experience smooth and enjoyable from the very beginning. He listened carefully to what we wanted to see and made sure every detail was thoughtfully covered. Not only did he show us all the places on our list, but he also went above and beyond by introducing us to additional spots we wouldn't have discovered on our own. His knowledge, flexibility, and warm personality truly enhanced our visit to Kyoto. We highly recommend this tour guide to anyone visiting Kyoto—he made our experience unforgettable, adding to that the good restaurant recommendations.",
   },
   {
-    quote:
-      "I've traveled a lot. I've never felt so looked after. Every detail was perfect, and it felt completely natural — not staged.",
-    name: "Thomas R.",
-    origin: "London, UK",
+    name: "Larry Subramanian",
+    country: "USA",
+    platform: "Klook",
+    text: "I had an amazing matcha tour with Tom in Japan. He was incredibly knowledgeable and explained every part of the process in a fun, engaging way. The pacing was perfect, and I loved getting to try different types of matcha I'd never experienced before. Tom made the whole experience feel personal and authentic. I'd recommend this tour to anyone visiting Japan who wants something memorable and unique.",
   },
   {
-    quote:
-      "The food tour was unlike anything. No English menus, no tourist traps. Just real food, real people, real Kyoto.",
-    name: "Elisa K.",
-    origin: "Berlin, Germany",
+    name: "Amit Bhagat",
+    country: "USA",
+    platform: "GetYourGuide",
+    text: "This was wonderful. I would give it 6 stars if I could. All due to our wonderful guide Tom Nishino. He is very knowledgeable, explained the history and culture of the visited sites in detail and with nuance. He also helped with the local public transportation, found an excellent sushi place for lunch, and took a lot of wonderful pictures of us. We had decided to forgo the walk in Gion and that turned out to be a good decision as the 4 sites took us 8 plus hours. This is a must if you are interested in the history and culture of Japan. Highly recommended.",
+  },
+  {
+    name: "Ashwini",
+    country: "UK",
+    platform: "GetYourGuide",
+    text: "Tom (our guide) was absolutely fantastic! About a week before our tour, he reached out to ask us what we'd like to see and recommended some truly great places to visit. He made sure we made the most of our time by taking us to some beautiful shrines and walking us through some great food markets where we got to try amazing food! His recommendations were spot on! He explained the history of Kyoto and the shrines in great detail and also took some amazing pictures to help us remember this trip of a lifetime! Out of the many places I've visited, Tom was probably the best guide I've had! I would recommend him in a heartbeat!",
+  },
+  {
+    name: "Amanda Vullmahn",
+    country: "USA",
+    platform: "Viator",
+    text: "We had an amazing time with Tom learning about Uji's history, tea, and culture! We went to many locations, sampling different types of teas and other assorted snacks and walking around Byodo-in Temple listening to and seeing its history. We had a very special matcha experience (ichi-go ichi-e) visiting a family-owned tea shop, from viewing the family's museum to grinding matcha to being guided in a tea ceremony. Would definitely recommend everyone try this personalized tour!",
+  },
+  {
+    name: "John",
+    country: "USA",
+    platform: "Viator",
+    text: "This tour was one of the best parts of our trip to Japan. I was traveling with a friend, and what really stood out was how personal and flexible the experience was. Instead of just following a script, our guide took the time to understand what we were interested in and tailored the conversation and spots to match that. It didn't feel like a typical tour — more like hanging out with someone who really knows the city and wants to share it in a fun, authentic way. We got to see a different side of Kyoto that we wouldn't have found on our own. Highly recommend this tour if you want something more real and personalized!",
   },
 ];
 
@@ -64,8 +85,9 @@ export default async function HomePage() {
       ...organizationJsonLd(),
       review: testimonials.map((t) => ({
         "@type": "Review",
-        reviewBody: t.quote,
+        reviewBody: t.text,
         author: { "@type": "Person", name: t.name },
+        publisher: { "@type": "Organization", name: t.platform },
       })),
     },
     {
@@ -319,40 +341,11 @@ export default async function HomePage() {
         </section>
 
         {/* ── Testimonials ── */}
-        <section className="py-28 px-6 bg-[#F5F4F2]">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-xs tracking-[0.3em] uppercase text-[#016812] mb-4">
-                Guest stories
-              </p>
-              <h2
-                className="text-4xl md:text-5xl font-light text-[#1A1A1A]"
-                style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-              >
-                What our guests say.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {testimonials.map((t, i) => (
-                <div key={i} className="bg-white p-8">
-                  <p
-                    className="text-4xl text-[#016812]/20 font-serif mb-4 leading-none"
-                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-                  >
-                    "
-                  </p>
-                  <p className="text-stone-600 font-light leading-relaxed italic mb-6 text-sm">
-                    {t.quote}
-                  </p>
-                  <div>
-                    <p className="text-sm font-medium text-[#1A1A1A]">{t.name}</p>
-                    <p className="text-xs text-stone-400 mt-1">{t.origin}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <Testimonials
+          reviews={testimonials}
+          rating={REVIEW_RATING}
+          count={REVIEW_COUNT}
+        />
 
         {/* ── Final CTA ── */}
         <section className="relative py-40 px-6 flex items-center justify-center overflow-hidden">

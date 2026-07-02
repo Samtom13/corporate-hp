@@ -12,6 +12,10 @@ export const SOCIAL_LINKS = [
   "https://www.facebook.com/share/1cDJrQZPuF/",
 ];
 
+// Aggregate across OTA platforms (Klook, GetYourGuide, Viator). Update as reviews grow.
+export const REVIEW_RATING = 4.8;
+export const REVIEW_COUNT = 124;
+
 /** Organization node shared across pages, referenced by @id */
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 
@@ -39,6 +43,12 @@ export function organizationJsonLd() {
     ],
     knowsLanguage: ["en", "ja"],
     priceRange: "¥5,000 - ¥34,000",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: String(REVIEW_RATING),
+      reviewCount: String(REVIEW_COUNT),
+      bestRating: "5",
+    },
     sameAs: SOCIAL_LINKS,
   };
 }

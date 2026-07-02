@@ -34,6 +34,8 @@ local English-speaking guides. Booking starts with a free request — no upfront
 payment is required; every itinerary is confirmed directly with the guest
 before any payment.
 
+Rated 4.8 out of 5 across 124+ reviews on Klook, GetYourGuide, and Viator.
+
 ## Tours
 
 ${tourSections}
