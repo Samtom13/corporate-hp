@@ -48,7 +48,10 @@ export default function Footer() {
               <a href="mailto:info@go-bond.jp" className="hover:text-white transition-colors">
                 info@go-bond.jp
               </a>
-              <p className="font-light">Kyoto, Japan</p>
+              <p className="font-light leading-relaxed">
+                Daikoku-cho 227, Dai-2 Kyoto Building 402,<br />
+                Shimogyo-ku, Kyoto, Japan
+              </p>
               <div className="flex gap-4 mt-2">
                 <a
                   href="https://www.instagram.com/bond_kyoto?igsh=NjEybnF3bm4wNndr&utm_source=qr"

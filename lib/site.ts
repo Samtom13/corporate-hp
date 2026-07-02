@@ -28,6 +28,7 @@ export function organizationJsonLd() {
     image: OG_IMAGE,
     address: {
       "@type": "PostalAddress",
+      streetAddress: "Daikoku-cho 227, Dai-2 Kyoto Building 402, Shimogyo-ku",
       addressLocality: "Kyoto",
       addressRegion: "Kyoto",
       addressCountry: "JP",
