@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { saveBooking } from "@/lib/db";
+import { saveBooking, getTours } from "@/lib/db";
 import type { Booking } from "@/lib/db";
 
 const ADMIN_EMAIL = "info@go-bond.jp";
@@ -38,8 +38,18 @@ export async function POST(request: Request) {
       status: "new",
     };
 
-    // Save to KV (non-blocking — don't fail the request if it errors)
+    // Save booking (non-blocking)
     saveBooking(booking).catch((e) => console.error("saveBooking error:", e));
+
+    // Resolve tour ID → display name for email
+    let tourDisplayName = "Not specified";
+    if (selectedTour) {
+      const tours = await getTours().catch(() => []);
+      const matched = tours.find((t) => t.id === selectedTour);
+      tourDisplayName = matched
+        ? `${matched.title}${matched.subtitle ? ` — ${matched.subtitle}` : ""}`
+        : selectedTour; // fallback to raw ID if lookup fails
+    }
 
     const bookingId = booking.id;
 
@@ -79,7 +89,7 @@ export async function POST(request: Request) {
           </tr>
           <tr>
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Tour</td>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${selectedTour || "Not specified"}</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${tourDisplayName}</td>
           </tr>
           <tr>
             <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Date</td>
