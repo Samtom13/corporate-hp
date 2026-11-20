@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("admin_token")?.value;
-  const expected = process.env.ADMIN_TOKEN ?? "bond-admin-2025";
+  const expected = process.env.ADMIN_TOKEN || "bond-admin-2025";
   if (token !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

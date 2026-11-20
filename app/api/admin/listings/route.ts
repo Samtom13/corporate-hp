@@ -1,7 +1,9 @@
 import { getTours, saveTour } from "@/lib/db";
 import type { Tour } from "@/lib/db";
+import { isAdmin, unauthorized } from "@/lib/adminAuth";
 
 export async function GET() {
+  if (!(await isAdmin())) return unauthorized();
   try {
     return Response.json(await getTours());
   } catch (e) {
@@ -11,6 +13,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!(await isAdmin())) return unauthorized();
   try {
     const body = await request.json() as Tour;
     if (!body.id || !body.title) {

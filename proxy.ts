@@ -4,11 +4,21 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect all /admin routes except /admin/login
+  const token = request.cookies.get("admin_token")?.value;
+  const expected = process.env.ADMIN_TOKEN || "bond-admin-2025";
+  const authed = token === expected;
+
+  // Admin API — everything except the login endpoint itself requires the cookie
+  if (pathname.startsWith("/api/admin") && !pathname.startsWith("/api/admin/auth")) {
+    if (!authed) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
+  // Protect all /admin pages except /admin/login
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const token = request.cookies.get("admin_token")?.value;
-    const expected = process.env.ADMIN_TOKEN ?? "bond-admin-2025";
-    if (token !== expected) {
+    if (!authed) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
@@ -17,5 +27,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

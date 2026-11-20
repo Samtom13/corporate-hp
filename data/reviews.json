@@ -1,0 +1,56 @@
+[
+  {
+    "id": "hend-alawadhi",
+    "name": "Hend Alawadhi",
+    "country": "UAE",
+    "platform": "Klook",
+    "rating": 5,
+    "text": "Our Kyoto tour was absolutely wonderful, thanks to our outstanding guide. He was extremely well-mannered, very cooperative, and genuinely friendly, which made the entire experience smooth and enjoyable from the very beginning. He listened carefully to what we wanted to see and made sure every detail was thoughtfully covered. Not only did he show us all the places on our list, but he also went above and beyond by introducing us to additional spots we wouldn't have discovered on our own. His knowledge, flexibility, and warm personality truly enhanced our visit to Kyoto. We highly recommend this tour guide to anyone visiting Kyoto—he made our experience unforgettable, adding to that the good restaurant recommendations.",
+    "featured": true
+  },
+  {
+    "id": "larry-subramanian",
+    "name": "Larry Subramanian",
+    "country": "USA",
+    "platform": "Klook",
+    "rating": 5,
+    "text": "I had an amazing matcha tour with Tom in Japan. He was incredibly knowledgeable and explained every part of the process in a fun, engaging way. The pacing was perfect, and I loved getting to try different types of matcha I'd never experienced before. Tom made the whole experience feel personal and authentic. I'd recommend this tour to anyone visiting Japan who wants something memorable and unique.",
+    "featured": true
+  },
+  {
+    "id": "amit-bhagat",
+    "name": "Amit Bhagat",
+    "country": "USA",
+    "platform": "GetYourGuide",
+    "rating": 5,
+    "text": "This was wonderful. I would give it 6 stars if I could. All due to our wonderful guide Tom Nishino. He is very knowledgeable, explained the history and culture of the visited sites in detail and with nuance. He also helped with the local public transportation, found an excellent sushi place for lunch, and took a lot of wonderful pictures of us. We had decided to forgo the walk in Gion and that turned out to be a good decision as the 4 sites took us 8 plus hours. This is a must if you are interested in the history and culture of Japan. Highly recommended.",
+    "featured": true
+  },
+  {
+    "id": "ashwini",
+    "name": "Ashwini",
+    "country": "UK",
+    "platform": "GetYourGuide",
+    "rating": 5,
+    "text": "Tom (our guide) was absolutely fantastic! About a week before our tour, he reached out to ask us what we'd like to see and recommended some truly great places to visit. He made sure we made the most of our time by taking us to some beautiful shrines and walking us through some great food markets where we got to try amazing food! His recommendations were spot on! He explained the history of Kyoto and the shrines in great detail and also took some amazing pictures to help us remember this trip of a lifetime! Out of the many places I've visited, Tom was probably the best guide I've had! I would recommend him in a heartbeat!",
+    "featured": true
+  },
+  {
+    "id": "amanda-vullmahn",
+    "name": "Amanda Vullmahn",
+    "country": "USA",
+    "platform": "Viator",
+    "rating": 5,
+    "text": "We had an amazing time with Tom learning about Uji's history, tea, and culture! We went to many locations, sampling different types of teas and other assorted snacks and walking around Byodo-in Temple listening to and seeing its history. We had a very special matcha experience (ichi-go ichi-e) visiting a family-owned tea shop, from viewing the family's museum to grinding matcha to being guided in a tea ceremony. Would definitely recommend everyone try this personalized tour!",
+    "featured": true
+  },
+  {
+    "id": "john",
+    "name": "John",
+    "country": "USA",
+    "platform": "Viator",
+    "rating": 5,
+    "text": "This tour was one of the best parts of our trip to Japan. I was traveling with a friend, and what really stood out was how personal and flexible the experience was. Instead of just following a script, our guide took the time to understand what we were interested in and tailored the conversation and spots to match that. It didn't feel like a typical tour — more like hanging out with someone who really knows the city and wants to share it in a fun, authentic way. We got to see a different side of Kyoto that we wouldn't have found on our own. Highly recommend this tour if you want something more real and personalized!",
+    "featured": true
+  }
+]

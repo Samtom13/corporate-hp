@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getTours } from "@/lib/db";
+import { getTours, getPublishedArticles } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
 
+// Articles are published from the admin panel, so the sitemap must be built per request
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const tours = await getTours();
+  const [tours, articles] = await Promise.all([getTours(), getPublishedArticles()]);
 
   const tourEntries: MetadataRoute.Sitemap = tours.map((tour) => ({
     url: `${SITE_URL}/tour/${tour.id}`,
@@ -11,6 +14,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.8,
   }));
+
+  const articleEntries: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: `${SITE_URL}/blog/${article.id}`,
+    lastModified: new Date(article.updatedAt || article.publishedAt),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  // The journal index is only listed once something is published there
+  const blogIndex: MetadataRoute.Sitemap =
+    articles.length > 0
+      ? [
+          {
+            url: `${SITE_URL}/blog`,
+            lastModified: new Date(articles[0].updatedAt || articles[0].publishedAt),
+            changeFrequency: "weekly",
+            priority: 0.8,
+          },
+        ]
+      : [];
 
   return [
     {
@@ -31,6 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     },
+    ...blogIndex,
     ...tourEntries,
+    ...articleEntries,
   ];
 }

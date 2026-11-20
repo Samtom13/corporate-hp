@@ -1,10 +1,16 @@
-import { getTours } from "@/lib/db";
+import { getTours, getFaqs, getPublishedArticles, getSettings } from "@/lib/db";
 import { SITE_URL, SITE_DESCRIPTION, cleanText } from "@/lib/site";
+import { markdownToPlainText } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const tours = await getTours();
+  const [tours, faqs, articles, settings] = await Promise.all([
+    getTours(),
+    getFaqs(),
+    getPublishedArticles(),
+    getSettings(),
+  ]);
 
   const tourSections = tours
     .map((tour) => {
@@ -24,6 +30,22 @@ export async function GET() {
     })
     .join("\n\n");
 
+  const faqSection = faqs
+    .map((faq) => `### ${faq.question}\n${cleanText(faq.answer, 600)}`)
+    .join("\n\n");
+
+  const articleSection = articles
+    .map((article) =>
+      [
+        `### ${article.title}`,
+        `- URL: ${SITE_URL}/blog/${article.id}`,
+        `- Published: ${article.publishedAt}`,
+        ...(article.tags.length > 0 ? [`- Topics: ${article.tags.join(", ")}`] : []),
+        `- ${cleanText(article.excerpt || markdownToPlainText(article.body), 400)}`,
+      ].join("\n")
+    )
+    .join("\n\n");
+
   const body = `# Bond — Private Tours in Kyoto
 
 > ${SITE_DESCRIPTION}
@@ -34,12 +56,16 @@ local English-speaking guides. Booking starts with a free request — no upfront
 payment is required; every itinerary is confirmed directly with the guest
 before any payment.
 
-Rated 4.8 out of 5 across 124+ reviews on Klook, GetYourGuide, and Viator.
+Rated ${settings.reviewRating} out of 5 across ${settings.reviewCount}+ reviews on Klook, GetYourGuide, and Viator.
 
 ## Tours
 
 ${tourSections}
 
+## Frequently asked questions
+
+${faqSection}
+${articleSection ? `\n## Guides and articles\n\n${articleSection}\n` : ""}
 ## How booking works
 
 1. Send a request via ${SITE_URL}/booking (dates, group, interests).
@@ -50,7 +76,7 @@ ${tourSections}
 
 - Home: ${SITE_URL}/
 - Request an experience: ${SITE_URL}/booking
-- FAQ: ${SITE_URL}/faq
+- FAQ: ${SITE_URL}/faq${articles.length > 0 ? `\n- Journal: ${SITE_URL}/blog` : ""}
 
 ## Contact
 

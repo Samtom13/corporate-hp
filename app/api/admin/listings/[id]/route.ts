@@ -1,9 +1,11 @@
 import { getTourById, saveTour, deleteTour } from "@/lib/db";
 import type { Tour } from "@/lib/db";
+import { isAdmin, unauthorized } from "@/lib/adminAuth";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
+  if (!(await isAdmin())) return unauthorized();
   try {
     const { id } = await params;
     const tour = await getTourById(id);
@@ -16,6 +18,7 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
+  if (!(await isAdmin())) return unauthorized();
   try {
     const { id } = await params;
     const body = await request.json() as Tour;
@@ -28,6 +31,7 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
+  if (!(await isAdmin())) return unauthorized();
   try {
     const { id } = await params;
     await deleteTour(id);

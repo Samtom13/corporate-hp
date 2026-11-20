@@ -1,12 +1,9 @@
 "use client";
 import { useState } from "react";
 
-export type Review = {
-  name: string;
-  country: string;
-  platform: string;
-  text: string;
-};
+import type { Review } from "@/lib/db";
+
+export type { Review };
 
 function ReviewCard({ review }: { review: Review }) {
   const [expanded, setExpanded] = useState(false);

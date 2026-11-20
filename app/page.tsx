@@ -1,18 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import Nav from "@/components/Nav";
+import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import Testimonials from "@/components/Testimonials";
-import { getTours } from "@/lib/db";
+import { getTours, getReviews, getSettings, getPublishedArticles } from "@/lib/db";
 import {
   SITE_URL,
   SITE_NAME,
-  REVIEW_RATING,
-  REVIEW_COUNT,
   organizationJsonLd,
   tourJsonLd,
+  reviewNodes,
   jsonLdDocument,
 } from "@/lib/site";
+import { formatDate, readingMinutes } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -38,57 +38,21 @@ const steps = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Hend Alawadhi",
-    country: "UAE",
-    platform: "Klook",
-    text: "Our Kyoto tour was absolutely wonderful, thanks to our outstanding guide. He was extremely well-mannered, very cooperative, and genuinely friendly, which made the entire experience smooth and enjoyable from the very beginning. He listened carefully to what we wanted to see and made sure every detail was thoughtfully covered. Not only did he show us all the places on our list, but he also went above and beyond by introducing us to additional spots we wouldn't have discovered on our own. His knowledge, flexibility, and warm personality truly enhanced our visit to Kyoto. We highly recommend this tour guide to anyone visiting Kyoto—he made our experience unforgettable, adding to that the good restaurant recommendations.",
-  },
-  {
-    name: "Larry Subramanian",
-    country: "USA",
-    platform: "Klook",
-    text: "I had an amazing matcha tour with Tom in Japan. He was incredibly knowledgeable and explained every part of the process in a fun, engaging way. The pacing was perfect, and I loved getting to try different types of matcha I'd never experienced before. Tom made the whole experience feel personal and authentic. I'd recommend this tour to anyone visiting Japan who wants something memorable and unique.",
-  },
-  {
-    name: "Amit Bhagat",
-    country: "USA",
-    platform: "GetYourGuide",
-    text: "This was wonderful. I would give it 6 stars if I could. All due to our wonderful guide Tom Nishino. He is very knowledgeable, explained the history and culture of the visited sites in detail and with nuance. He also helped with the local public transportation, found an excellent sushi place for lunch, and took a lot of wonderful pictures of us. We had decided to forgo the walk in Gion and that turned out to be a good decision as the 4 sites took us 8 plus hours. This is a must if you are interested in the history and culture of Japan. Highly recommended.",
-  },
-  {
-    name: "Ashwini",
-    country: "UK",
-    platform: "GetYourGuide",
-    text: "Tom (our guide) was absolutely fantastic! About a week before our tour, he reached out to ask us what we'd like to see and recommended some truly great places to visit. He made sure we made the most of our time by taking us to some beautiful shrines and walking us through some great food markets where we got to try amazing food! His recommendations were spot on! He explained the history of Kyoto and the shrines in great detail and also took some amazing pictures to help us remember this trip of a lifetime! Out of the many places I've visited, Tom was probably the best guide I've had! I would recommend him in a heartbeat!",
-  },
-  {
-    name: "Amanda Vullmahn",
-    country: "USA",
-    platform: "Viator",
-    text: "We had an amazing time with Tom learning about Uji's history, tea, and culture! We went to many locations, sampling different types of teas and other assorted snacks and walking around Byodo-in Temple listening to and seeing its history. We had a very special matcha experience (ichi-go ichi-e) visiting a family-owned tea shop, from viewing the family's museum to grinding matcha to being guided in a tea ceremony. Would definitely recommend everyone try this personalized tour!",
-  },
-  {
-    name: "John",
-    country: "USA",
-    platform: "Viator",
-    text: "This tour was one of the best parts of our trip to Japan. I was traveling with a friend, and what really stood out was how personal and flexible the experience was. Instead of just following a script, our guide took the time to understand what we were interested in and tailored the conversation and spots to match that. It didn't feel like a typical tour — more like hanging out with someone who really knows the city and wants to share it in a fun, authentic way. We got to see a different side of Kyoto that we wouldn't have found on our own. Highly recommend this tour if you want something more real and personalized!",
-  },
-];
 
 export default async function HomePage() {
-  const experiences = await getTours();
+  const [experiences, allReviews, settings, articles] = await Promise.all([
+    getTours(),
+    getReviews(),
+    getSettings(),
+    getPublishedArticles(),
+  ]);
+  const featuredReviews = allReviews.filter((r) => r.featured).slice(0, 6);
+  const latestArticles = articles.slice(0, 3);
 
   const jsonLd = jsonLdDocument([
     {
-      ...organizationJsonLd(),
-      review: testimonials.map((t) => ({
-        "@type": "Review",
-        reviewBody: t.text,
-        author: { "@type": "Person", name: t.name },
-        publisher: { "@type": "Organization", name: t.platform },
-      })),
+      ...organizationJsonLd({ rating: settings.reviewRating, count: settings.reviewCount }),
+      review: reviewNodes(featuredReviews),
     },
     {
       "@type": "WebSite",
@@ -115,7 +79,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Nav />
+      <SiteNav />
       <main>
         {/* ── Hero ── */}
         <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
@@ -342,10 +306,65 @@ export default async function HomePage() {
 
         {/* ── Testimonials ── */}
         <Testimonials
-          reviews={testimonials}
-          rating={REVIEW_RATING}
-          count={REVIEW_COUNT}
+          reviews={featuredReviews}
+          rating={settings.reviewRating}
+          count={settings.reviewCount}
         />
+
+        {/* ── From the Journal — only once an article is published ── */}
+        {latestArticles.length > 0 && (
+          <section className="py-28 px-6 bg-white">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-16">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#016812] mb-4">
+                  Journal
+                </p>
+                <h2
+                  className="text-4xl md:text-5xl font-light text-[#1A1A1A] mb-6"
+                  style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                >
+                  Know Kyoto before you arrive.
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                {latestArticles.map((article) => (
+                  <Link key={article.id} href={`/blog/${article.id}`} className="group block">
+                    <div className="aspect-[3/2] overflow-hidden bg-stone-100 mb-5">
+                      {article.coverImage && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={article.coverImage}
+                          alt={article.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
+                    </div>
+                    <h3
+                      className="text-xl font-light text-[#1A1A1A] leading-snug mb-3 group-hover:text-[#016812] transition-colors"
+                      style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                    >
+                      {article.title}
+                    </h3>
+                    <p className="text-stone-500 font-light leading-relaxed text-sm mb-4 line-clamp-3">
+                      {article.excerpt}
+                    </p>
+                    <p className="text-xs text-stone-400">
+                      {formatDate(article.publishedAt)} · {readingMinutes(article.body)} min read
+                    </p>
+                  </Link>
+                ))}
+              </div>
+              <div className="text-center mt-14">
+                <Link
+                  href="/blog"
+                  className="inline-block px-10 py-4 border border-[#016812] text-[#016812] text-xs tracking-widest uppercase hover:bg-[#016812] hover:text-white transition-all duration-300"
+                >
+                  Read the journal
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Final CTA ── */}
         <section className="relative py-40 px-6 flex items-center justify-center overflow-hidden">

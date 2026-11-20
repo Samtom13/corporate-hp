@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { hasPublishedArticles } from "@/lib/content";
 
-export default function Footer() {
+export default async function Footer() {
+  const showJournal = await hasPublishedArticles();
+
   return (
     <footer className="bg-[#016812] text-white py-16 px-6">
       <div className="max-w-7xl mx-auto">
@@ -27,6 +30,7 @@ export default function Footer() {
                 { label: "Experiences", href: "/#experiences" },
                 { label: "How It Works", href: "/#how-it-works" },
                 { label: "About Bond", href: "/#about" },
+                ...(showJournal ? [{ label: "Journal", href: "/blog" }] : []),
                 { label: "FAQ", href: "/faq" },
                 { label: "Request Experience", href: "/booking" },
               ].map((link) => (

@@ -2,9 +2,18 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-export default function Nav() {
+/** Rendered by components/SiteNav.tsx, which hides Journal until an article is live. */
+export default function Nav({ showJournal = false }: { showJournal?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const links = [
+    { label: "Experiences", href: "/#experiences" },
+    { label: "How It Works", href: "/#how-it-works" },
+    { label: "About", href: "/#about" },
+    ...(showJournal ? [{ label: "Journal", href: "/blog" }] : []),
+    { label: "FAQ", href: "/faq" },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -32,12 +41,7 @@ export default function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-10">
-          {[
-            { label: "Experiences", href: "/#experiences" },
-            { label: "How It Works", href: "/#how-it-works" },
-            { label: "About", href: "/#about" },
-            { label: "FAQ", href: "/faq" },
-          ].map((link) => (
+          {links.map((link) => (
             <Link
               key={link.label}
               href={link.href}
@@ -75,12 +79,7 @@ export default function Nav() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-stone-100 px-6 py-8 flex flex-col gap-6">
-          {[
-            { label: "Experiences", href: "/#experiences" },
-            { label: "How It Works", href: "/#how-it-works" },
-            { label: "About", href: "/#about" },
-            { label: "FAQ", href: "/faq" },
-          ].map((link) => (
+          {links.map((link) => (
             <Link
               key={link.label}
               href={link.href}

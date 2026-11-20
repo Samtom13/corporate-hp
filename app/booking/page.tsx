@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Nav from "@/components/Nav";
+import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import BookingForm from "./BookingForm";
 import { getTours } from "@/lib/db";
@@ -18,7 +18,7 @@ export default async function BookingPage() {
 
   return (
     <>
-      <Nav />
+      <SiteNav />
       <main className="pt-24">
         <section className="py-20 px-6 bg-[#F5F4F2]">
           <div className="max-w-2xl mx-auto text-center">

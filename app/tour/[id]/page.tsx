@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Nav from "@/components/Nav";
+import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import TourSidebar from "@/components/TourSidebar";
 import { getTourById, getTours } from "@/lib/db";
@@ -61,7 +61,7 @@ export default async function TourPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Nav />
+      <SiteNav />
       <main className="pt-0">
         {/* Hero */}
         <section className="relative h-[70vh] min-h-[500px] flex items-end overflow-hidden">

@@ -1,11 +1,19 @@
 import Link from "next/link";
-import { getTours, getBookings } from "@/lib/db";
+import { getTours, getBookings, getArticles, getFaqs, getReviews } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [tours, bookings] = await Promise.all([getTours(), getBookings()]);
+  const [tours, bookings, articles, faqs, reviews] = await Promise.all([
+    getTours(),
+    getBookings(),
+    getArticles(),
+    getFaqs(),
+    getReviews(),
+  ]);
   const newBookings = bookings.filter((b) => b.status === "new");
+  const publishedArticles = articles.filter((a) => a.status === "published");
+  const drafts = articles.length - publishedArticles.length;
 
   return (
     <div className="p-8">
@@ -33,6 +41,45 @@ export default async function AdminDashboard() {
               style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
               {stat.value}
             </p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Content — what search engines and AI assistants read */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        {[
+          {
+            label: "Articles",
+            value: publishedArticles.length,
+            note: drafts > 0 ? `${drafts} draft${drafts === 1 ? "" : "s"}` : "published",
+            href: "/admin/articles",
+          },
+          {
+            label: "FAQ Questions",
+            value: faqs.length,
+            note: "live on /faq",
+            href: "/admin/faqs",
+          },
+          {
+            label: "Reviews",
+            value: reviews.length,
+            note: `${reviews.filter((r) => r.featured).length} on homepage`,
+            href: "/admin/reviews",
+          },
+        ].map((stat) => (
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="bg-white p-6 border border-stone-100 hover:shadow-sm transition-shadow"
+          >
+            <p className="text-xs tracking-widest uppercase text-stone-400 mb-2">{stat.label}</p>
+            <p
+              className="text-4xl font-light text-[#1A1A1A]"
+              style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+            >
+              {stat.value}
+            </p>
+            <p className="text-xs text-stone-400 mt-1">{stat.note}</p>
           </Link>
         ))}
       </div>

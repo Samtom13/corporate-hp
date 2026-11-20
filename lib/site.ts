@@ -1,4 +1,4 @@
-import type { Tour } from "@/lib/db";
+import type { Article, Review, Tour } from "@/lib/db";
 
 export const SITE_URL = "https://go-bond.jp";
 export const SITE_NAME = "Bond";
@@ -19,7 +19,13 @@ export const REVIEW_COUNT = 124;
 /** Organization node shared across pages, referenced by @id */
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 
-export function organizationJsonLd() {
+/**
+ * The aggregate rating is editable from the admin panel, so pages pass the
+ * stored values in. The constants above stay as the fallback.
+ */
+export function organizationJsonLd(opts?: { rating?: number; count?: number }) {
+  const rating = opts?.rating ?? REVIEW_RATING;
+  const count = opts?.count ?? REVIEW_COUNT;
   return {
     "@type": "TravelAgency",
     "@id": ORGANIZATION_ID,
@@ -45,8 +51,8 @@ export function organizationJsonLd() {
     priceRange: "¥5,000 - ¥34,000",
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: String(REVIEW_RATING),
-      reviewCount: String(REVIEW_COUNT),
+      ratingValue: String(rating),
+      reviewCount: String(count),
       bestRating: "5",
     },
     sameAs: SOCIAL_LINKS,
@@ -100,4 +106,73 @@ export function jsonLdDocument(nodes: object[]) {
     "@context": "https://schema.org",
     "@graph": nodes,
   };
+}
+
+/** BlogPosting node for an article page */
+export function articleJsonLd(article: Article, plainBody: string) {
+  const url = `${SITE_URL}/blog/${article.id}`;
+  return {
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    headline: article.title,
+    description: cleanText(article.metaDescription || article.excerpt, 300),
+    articleBody: cleanText(plainBody, 5000),
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    datePublished: article.publishedAt,
+    dateModified: article.updatedAt || article.publishedAt,
+    author: { "@type": "Organization", name: article.author || SITE_NAME, "@id": ORGANIZATION_ID },
+    publisher: { "@id": ORGANIZATION_ID },
+    ...(article.coverImage ? { image: [article.coverImage] } : {}),
+    ...(article.tags.length > 0 ? { keywords: article.tags.join(", ") } : {}),
+    inLanguage: "en",
+    isAccessibleForFree: true,
+  };
+}
+
+/** FAQPage node — used on /faq and on articles that carry their own Q&As */
+export function faqPageJsonLd(
+  faqs: { question: string; answer: string }[],
+  pageUrl: string
+) {
+  return {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: { "@type": "Answer", text: faq.answer },
+    })),
+  };
+}
+
+export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+/** Review nodes attached to the Organization */
+export function reviewNodes(reviews: Review[]) {
+  return reviews.map((r) => ({
+    "@type": "Review",
+    reviewBody: r.text,
+    author: { "@type": "Person", name: r.name },
+    publisher: { "@type": "Organization", name: r.platform },
+    ...(r.rating
+      ? {
+          reviewRating: {
+            "@type": "Rating",
+            ratingValue: String(r.rating),
+            bestRating: "5",
+          },
+        }
+      : {}),
+  }));
 }
