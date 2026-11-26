@@ -49,6 +49,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      // 撮影サービスLP。別プロジェクトを next.config.ts のリライトで配信している
+      url: `${SITE_URL}/photo`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/faq`,
       lastModified: new Date(),
       changeFrequency: "monthly",

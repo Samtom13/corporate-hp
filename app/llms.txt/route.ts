@@ -62,6 +62,20 @@ Rated ${settings.reviewRating} out of 5 across ${settings.reviewCount}+ reviews 
 
 ${tourSections}
 
+## Photography
+
+### Kyoto Photography by Bond — Private 30-Minute Photo Session
+- URL: ${SITE_URL}/photo
+- Duration: 30 minutes, private
+- Price per person (daytime 09:00-19:00): 1-2 people \u00a510,000 / 3 people \u00a58,000 / 4 people \u00a56,000
+- Price per person (early morning 07:00-09:00): 1.5x the daytime rate \u2014 \u00a515,000 / \u00a512,000 / \u00a59,000
+- Photos: no limit on the number of shots taken
+- Delivery: edited gallery in 1-5 days
+- Cancellation: free up to 24 hours before; within 24 hours the full amount is charged
+- Languages: English and Japanese
+- Booked through Viator: https://www.viator.com/tours/Kyoto/Kyoto-Photo-Walk-Capture-Memories-with-a-Local-Photographer/d332-439349P11
+- A local photographer walks Kyoto with you and shoots for the full session. This is a photography service only \u2014 kimono or yukata rental is not included.
+
 ## Frequently asked questions
 
 ${faqSection}
@@ -76,6 +90,7 @@ ${articleSection ? `\n## Guides and articles\n\n${articleSection}\n` : ""}
 
 - Home: ${SITE_URL}/
 - Request an experience: ${SITE_URL}/booking
+- Kyoto Photography by Bond: ${SITE_URL}/photo
 - FAQ: ${SITE_URL}/faq${articles.length > 0 ? `\n- Journal: ${SITE_URL}/blog` : ""}
 
 ## Contact
