@@ -60,6 +60,9 @@ function toId(title: string) {
 
 export default function ListingEditor({ initial, isNew }: Props) {
   const router = useRouter();
+  // The slug the listing is stored under right now. Renaming PUTs to this URL
+  // while the body carries the new slug, so the server knows what moved.
+  const originalId = initial.id ?? "";
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -196,7 +199,17 @@ export default function ListingEditor({ initial, isNew }: Props) {
   const handleSave = async () => {
     setSaving(true);
     setError("");
-    const id = isNew ? toId(tour.title) : tour.id;
+    const id = isNew ? tour.id.trim() || toId(tour.title) : tour.id.trim();
+    if (!id) {
+      setError("A URL slug is required");
+      setSaving(false);
+      return;
+    }
+    if (!/^[a-z0-9-]+$/.test(id)) {
+      setError("The URL slug may only use lowercase letters, numbers and hyphens");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...tour,
       id,
@@ -210,7 +223,7 @@ export default function ListingEditor({ initial, isNew }: Props) {
     };
     try {
       const res = await fetch(
-        isNew ? "/api/admin/listings" : `/api/admin/listings/${id}`,
+        isNew ? "/api/admin/listings" : `/api/admin/listings/${originalId}`,
         {
           method: isNew ? "POST" : "PUT",
           headers: { "Content-Type": "application/json" },
@@ -298,6 +311,28 @@ export default function ListingEditor({ initial, isNew }: Props) {
             {field("Price From (テキスト表示)", <input className={inputClass} value={tour.priceFrom} onChange={(e) => set("priceFrom", e.target.value)} placeholder="e.g. From ¥45,000 — 人数別料金未設定時に表示" />)}
           </div>
           {field("Description", <textarea className={textareaClass} rows={4} value={tour.description} onChange={(e) => set("description", e.target.value)} placeholder="Main description shown on the tour page." />)}
+          {field(
+            "URL slug",
+            <>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-stone-400 whitespace-nowrap">go-bond.jp/tour/</span>
+                <input
+                  className={inputClass}
+                  value={tour.id}
+                  onChange={(e) => set("id", e.target.value)}
+                  placeholder={isNew ? "空欄ならタイトルから自動生成" : "gion-sake-night-walk"}
+                />
+              </div>
+              <p className="text-xs text-stone-400 mt-2">
+                小文字・数字・ハイフンのみ。
+                {isNew
+                  ? "空欄のままならタイトルから自動で作ります。"
+                  : tour.id.trim() && tour.id.trim() !== originalId
+                    ? `保存すると /tour/${originalId} は /tour/${tour.id.trim()} に自動で転送されます（301）。既存のリンクや検索結果は切れません。`
+                    : "変更すると、古いURLから新しいURLへ自動で転送されます（301）。"}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Pricing tiers */}

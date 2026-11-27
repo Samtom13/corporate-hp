@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import TourSidebar from "@/components/TourSidebar";
-import { getTourById, getTours } from "@/lib/db";
+import { getTourById, getTourByPreviousId, getTours } from "@/lib/db";
 import { organizationFacts } from "@/lib/content";
 import {
   cleanText,
@@ -18,6 +18,35 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+/**
+ * Slugs from before the listings were renamed to match what they actually sell
+ * (/tour/local-food-tour was the Gion Sake Night Walk, and so on).
+ *
+ * Renaming a listing in the admin records the old slug on the listing itself,
+ * which is what normally drives the redirect. This map is the belt-and-braces
+ * version for these four: it works even if the rename is done some other way,
+ * and it is harmless while the old slug is still in use, because a slug that
+ * still resolves to a listing never reaches the redirect.
+ */
+const RENAMED_TOUR_SLUGS: Record<string, string> = {
+  "hidden-kyoto": "kyoto-4-iconic-sights-full-day-private-tour",
+  "tea-ceremony-private": "uji-4h-matcha-tour-with-a-local",
+  "morning-fushimi": "kyoto-3h-100-customized-private-tour",
+  "local-food-tour": "gion-sake-night-walk",
+};
+
+/** Where an unknown slug should go, or null to 404. */
+async function movedTo(id: string): Promise<string | null> {
+  // What the admin recorded wins: it is right whatever new slug was chosen.
+  const renamed = await getTourByPreviousId(id);
+  if (renamed) return renamed.id;
+
+  const mapped = RENAMED_TOUR_SLUGS[id];
+  if (mapped && (await getTourById(mapped))) return mapped;
+
+  return null;
+}
+
 export async function generateStaticParams() {
   const tours = await getTours();
   return tours.map((t) => ({ id: t.id }));
@@ -28,7 +57,11 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const tour = await getTourById(id);
-  if (!tour) return {};
+  if (!tour) {
+    // Point the crawler at the new URL even before it follows the redirect.
+    const moved = await movedTo(id);
+    return moved ? { alternates: { canonical: `/tour/${moved}` } } : {};
+  }
 
   const priceLabel = tourPriceFromLabel(tour);
   const description = cleanText(
@@ -59,7 +92,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TourPage({ params }: Props) {
   const { id } = await params;
   const tour = await getTourById(id);
-  if (!tour) notFound();
+
+  if (!tour) {
+    // The slug may have been renamed; send the old URL on with a permanent
+    // redirect so links and search results keep working.
+    const moved = await movedTo(id);
+    if (moved) permanentRedirect(`/tour/${moved}`);
+    notFound();
+  }
 
   const jsonLd = jsonLdDocument([
     organizationJsonLd(await organizationFacts()),

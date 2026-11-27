@@ -20,6 +20,12 @@ export type Tour = {
   includes: string[];
   excludes: string[];
   beforeYouBook: string[];
+  /**
+   * Slugs this tour used to live at. Renaming a listing in the admin pushes the
+   * old slug here, and /tour/[id] 301s from each of them, so a URL that is
+   * already indexed or linked from an article keeps working.
+   */
+  previousIds?: string[];
 };
 
 export type Booking = {
@@ -42,7 +48,13 @@ const BOOKINGS_PATH = "bond-data/bookings.json";
 
 function withDefaults(t: object): Tour {
   return {
-    ...({ pricing: [], includes: [], excludes: [], beforeYouBook: [] } as unknown as Tour),
+    ...({
+      pricing: [],
+      includes: [],
+      excludes: [],
+      beforeYouBook: [],
+      previousIds: [],
+    } as unknown as Tour),
     ...(t as Tour),
   };
 }
@@ -137,6 +149,39 @@ export async function getTours(): Promise<Tour[]> {
 export async function getTourById(id: string): Promise<Tour | undefined> {
   const tours = await getTours();
   return tours.find((t) => t.id === id);
+}
+
+/** The tour that used to live at `id`, for redirecting a renamed slug. */
+export async function getTourByPreviousId(id: string): Promise<Tour | undefined> {
+  const tours = await getTours();
+  return tours.find((t) => (t.previousIds ?? []).includes(id));
+}
+
+/**
+ * Move a listing to a new slug, remembering the old one so /tour/[id] can 301.
+ * The whole collection is written in one go, so the rename is atomic: the
+ * listing is never briefly absent.
+ */
+export async function renameTour(
+  oldId: string,
+  tour: Tour
+): Promise<{ ok: true } | { ok: false; reason: "not-found" | "taken" }> {
+  const tours = await getTours();
+  const idx = tours.findIndex((t) => t.id === oldId);
+  if (idx < 0) return { ok: false, reason: "not-found" };
+  if (tours.some((t, i) => i !== idx && t.id === tour.id)) {
+    return { ok: false, reason: "taken" };
+  }
+
+  // Keep every slug this listing has ever had, minus the one it now occupies
+  // (so renaming back to an earlier slug does not leave a self-redirect).
+  const previousIds = Array.from(
+    new Set([...(tours[idx].previousIds ?? []), oldId])
+  ).filter((prev) => prev !== tour.id);
+
+  tours[idx] = { ...tour, previousIds };
+  await writeBlob(TOURS_PATH, tours);
+  return { ok: true };
 }
 
 export async function saveTour(tour: Tour): Promise<void> {
