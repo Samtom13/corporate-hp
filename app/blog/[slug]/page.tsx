@@ -88,7 +88,7 @@ export default async function ArticlePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SiteNav />
+      <SiteNav solid />
       <main className="pt-24">
         {/* Header */}
         <article>

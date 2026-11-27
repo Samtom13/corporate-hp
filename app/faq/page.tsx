@@ -40,7 +40,7 @@ export default async function FaqPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SiteNav />
+      <SiteNav solid />
       <main className="pt-24">
         <section className="py-20 px-6 bg-[#F5F4F2]">
           <div className="max-w-2xl mx-auto text-center">
