@@ -7,7 +7,15 @@ export const SITE_DESCRIPTION =
 export const OG_IMAGE =
   "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80";
 
+/**
+ * Organization の sameAs。会社の主アカウントは bond_japantour。
+ * bond_kyoto は撮影サービス用の別アカウントだが、同じ会社のものだと
+ * 機械側に明示するためここにも並べる（撮影サービス自体の sameAs は
+ * design-rocket-certificates/index.html の Service ノード側で bond_kyoto）。
+ * この配列は LP 側 index.html の Organization.sameAs と必ず一致させること。
+ */
 export const SOCIAL_LINKS = [
+  "https://www.instagram.com/bond_japantour",
   "https://www.instagram.com/bond_kyoto",
   "https://www.facebook.com/share/1cDJrQZPuF/",
 ];

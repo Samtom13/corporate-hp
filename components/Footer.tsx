@@ -71,7 +71,7 @@ export default async function Footer() {
               </p>
               <div className="flex gap-4 mt-2">
                 <a
-                  href="https://www.instagram.com/bond_kyoto?igsh=NjEybnF3bm4wNndr&utm_source=qr"
+                  href="https://www.instagram.com/bond_japantour"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors text-xs tracking-widest uppercase"

@@ -107,7 +107,8 @@ ${articleSection ? `\n## Guides and articles\n\n${articleSection}\n` : ""}
 ## Contact
 
 - Email: info@go-bond.jp
-- Instagram: https://www.instagram.com/bond_kyoto
+- Instagram: https://www.instagram.com/bond_japantour
+- Instagram (photo sessions): https://www.instagram.com/bond_kyoto
 - Facebook: https://www.facebook.com/share/1cDJrQZPuF/
 - Address: Daikoku-cho 227, Dai-2 Kyoto Building 402, Shimogyo-ku, Kyoto, Japan
 `;
