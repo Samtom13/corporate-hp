@@ -5,7 +5,14 @@ import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import TourSidebar from "@/components/TourSidebar";
 import { getTourById, getTours } from "@/lib/db";
-import { cleanText, tourJsonLd, organizationJsonLd, jsonLdDocument } from "@/lib/site";
+import { organizationFacts } from "@/lib/content";
+import {
+  cleanText,
+  tourJsonLd,
+  tourPriceFromLabel,
+  organizationJsonLd,
+  jsonLdDocument,
+} from "@/lib/site";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -23,8 +30,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tour = await getTourById(id);
   if (!tour) return {};
 
+  const priceLabel = tourPriceFromLabel(tour);
   const description = cleanText(
-    `${tour.duration} private tour in Kyoto, ${tour.priceFrom}. ${tour.description}`,
+    `${tour.duration} private tour in Kyoto${priceLabel ? `, ${priceLabel.toLowerCase()}` : ""}. ${tour.description}`,
     160
   );
 
@@ -53,7 +61,10 @@ export default async function TourPage({ params }: Props) {
   const tour = await getTourById(id);
   if (!tour) notFound();
 
-  const jsonLd = jsonLdDocument([organizationJsonLd(), tourJsonLd(tour)]);
+  const jsonLd = jsonLdDocument([
+    organizationJsonLd(await organizationFacts()),
+    tourJsonLd(tour),
+  ]);
 
   return (
     <>

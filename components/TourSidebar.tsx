@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Tour } from "@/lib/db";
+import { tourPriceFromLabel } from "@/lib/site";
 
 type Props = {
   tour: Pick<Tour, "id" | "duration" | "groupSize" | "priceFrom" | "pricing">;
@@ -21,12 +22,9 @@ export default function TourSidebar({ tour }: Props) {
       ? (sorted.find((p) => p.guests === selectedGuests)?.price ?? null)
       : null;
 
-  // "From" label: use priceFrom text, or derive from cheapest tier
-  const fromLabel = tour.priceFrom
-    ? tour.priceFrom
-    : sorted.length > 0
-    ? `From ¥${sorted[0].price.toLocaleString()} per person`
-    : null;
+  // Derived from the per-guest table so the visible price always matches the
+  // JSON-LD offers; the hand-typed priceFrom is only used when there is no table
+  const fromLabel = tourPriceFromLabel(tour);
 
   return (
     <div className="sticky top-28 bg-[#F5F4F2] p-8 space-y-6">

@@ -28,20 +28,33 @@ export default async function Footer() {
             <div className="flex flex-col gap-3">
               {[
                 { label: "Experiences", href: "/#experiences" },
+                { label: "Photo Sessions", href: "/photo", external: true },
                 { label: "How It Works", href: "/#how-it-works" },
                 { label: "About Bond", href: "/#about" },
                 ...(showJournal ? [{ label: "Journal", href: "/blog" }] : []),
                 { label: "FAQ", href: "/faq" },
                 { label: "Request Experience", href: "/booking" },
-              ].map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-white/60 text-sm hover:text-white transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              ].map((link) =>
+                // /photo is rewritten to the separate photography deployment,
+                // so it needs a plain <a> rather than client-side routing
+                link.external ? (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="text-white/60 text-sm hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-white/60 text-sm hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
             </div>
           </div>
 

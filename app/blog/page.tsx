@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
-import { getPublishedArticles, getSettings } from "@/lib/db";
+import { publishedArticles, organizationFacts } from "@/lib/content";
 import {
   SITE_URL,
   SITE_NAME,
@@ -22,11 +22,11 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogIndexPage() {
-  const [articles, settings] = await Promise.all([getPublishedArticles(), getSettings()]);
+  const [articles, orgFacts] = await Promise.all([publishedArticles(), organizationFacts()]);
   const [featured, ...rest] = articles;
 
   const jsonLd = jsonLdDocument([
-    organizationJsonLd({ rating: settings.reviewRating, count: settings.reviewCount }),
+    organizationJsonLd(orgFacts),
     {
       "@type": "Blog",
       "@id": `${SITE_URL}/blog#blog`,

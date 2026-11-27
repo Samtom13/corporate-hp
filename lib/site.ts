@@ -3,7 +3,7 @@ import type { Article, Review, Tour } from "@/lib/db";
 export const SITE_URL = "https://go-bond.jp";
 export const SITE_NAME = "Bond";
 export const SITE_DESCRIPTION =
-  "Private, fully personalized tours in Kyoto led by local English-speaking guides. Full-day highlights, Uji matcha experiences, Gion sake night walks, and 100% customized itineraries. No upfront payment required.";
+  "Private, fully personalized tours in Kyoto and Uji led by local English-speaking guides — full-day highlights, matcha, Nishiki Market food walks, Gion mornings and sake night walks, plus private photo sessions. No upfront payment required.";
 export const OG_IMAGE =
   "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80";
 
@@ -23,7 +23,11 @@ export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
  * The aggregate rating is editable from the admin panel, so pages pass the
  * stored values in. The constants above stay as the fallback.
  */
-export function organizationJsonLd(opts?: { rating?: number; count?: number }) {
+export function organizationJsonLd(opts?: {
+  rating?: number;
+  count?: number;
+  priceRange?: string;
+}) {
   const rating = opts?.rating ?? REVIEW_RATING;
   const count = opts?.count ?? REVIEW_COUNT;
   return {
@@ -48,7 +52,7 @@ export function organizationJsonLd(opts?: { rating?: number; count?: number }) {
       { "@type": "City", name: "Uji" },
     ],
     knowsLanguage: ["en", "ja"],
-    priceRange: "¥5,000 - ¥34,000",
+    priceRange: opts?.priceRange ?? FALLBACK_PRICE_RANGE,
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: String(rating),
@@ -56,7 +60,52 @@ export function organizationJsonLd(opts?: { rating?: number; count?: number }) {
       bestRating: "5",
     },
     sameAs: SOCIAL_LINKS,
+    // The photography service is defined in full on /photo (same @id); this
+    // reference ties it to the organization from every other page too
+    makesOffer: {
+      "@type": "Offer",
+      itemOffered: { "@id": `${SITE_URL}/photo#service` },
+      url: `${SITE_URL}/photo`,
+    },
   };
+}
+
+/** Used only when no listing has a per-guest price table to derive the range from */
+const FALLBACK_PRICE_RANGE = "¥4,000 - ¥68,000";
+
+/** Per-guest prices, cheapest first */
+export function sortedPricing(tour: Pick<Tour, "pricing">) {
+  return [...(tour.pricing ?? [])]
+    .filter((p) => p.price > 0)
+    .sort((a, b) => a.price - b.price);
+}
+
+/**
+ * The "From" price shown to visitors.
+ *
+ * The per-guest table is the single source of truth, because it is also what
+ * feeds the JSON-LD offers and llms.txt — deriving the label from it means the
+ * price a visitor reads can never disagree with the price an AI assistant
+ * quotes. The hand-typed priceFrom field is only a fallback for listings that
+ * have no table yet.
+ */
+export function tourPriceFromLabel(
+  tour: Pick<Tour, "priceFrom" | "pricing">
+): string | null {
+  const prices = sortedPricing(tour);
+  if (prices.length > 0) {
+    return `From ¥${prices[0].price.toLocaleString()} per person`;
+  }
+  return tour.priceFrom || null;
+}
+
+/** schema.org priceRange for the Organization node, derived from live listings */
+export function sitePriceRange(tours: Pick<Tour, "pricing">[]): string {
+  const prices = tours.flatMap((t) => sortedPricing(t).map((p) => p.price));
+  if (prices.length === 0) return FALLBACK_PRICE_RANGE;
+  return `¥${Math.min(...prices).toLocaleString()} - ¥${Math.max(
+    ...prices
+  ).toLocaleString()}`;
 }
 
 /** Strip extra whitespace/newlines from CMS text for use in meta tags and JSON-LD */

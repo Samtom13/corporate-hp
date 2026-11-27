@@ -1,5 +1,5 @@
 import { getTours, getFaqs, getPublishedArticles, getSettings } from "@/lib/db";
-import { SITE_URL, SITE_DESCRIPTION, cleanText } from "@/lib/site";
+import { SITE_URL, SITE_DESCRIPTION, cleanText, sortedPricing } from "@/lib/site";
 import { markdownToPlainText } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +14,28 @@ export async function GET() {
 
   const tourSections = tours
     .map((tour) => {
-      const prices = (tour.pricing ?? []).map((p) => p.price).filter((p) => p > 0);
-      const priceLine =
-        prices.length > 0
-          ? `Price: ¥${Math.min(...prices).toLocaleString()}–¥${Math.max(...prices).toLocaleString()} JPY (varies by group size)`
-          : `Price: ${tour.priceFrom}`;
+      // The full per-guest table, so an assistant asked "how much for 4 people"
+      // can answer with the exact figure instead of guessing inside a range
+      const tiers = [...(tour.pricing ?? [])]
+        .filter((p) => p.price > 0)
+        .sort((a, b) => a.guests - b.guests);
+      const cheapest = sortedPricing(tour)[0];
+      const priceLines =
+        tiers.length > 0
+          ? [
+              `- Price from: ¥${cheapest.price.toLocaleString()} per person`,
+              `- Price per person by group size: ${tiers
+                .map((t) => `${t.guests} ${t.guests === 1 ? "guest" : "guests"} ¥${t.price.toLocaleString()}`)
+                .join(" / ")}`,
+              `- Currency: JPY, per person. The price is confirmed before any payment.`,
+            ]
+          : [`- Price: ${tour.priceFrom}`];
       return [
         `### ${tour.title}`,
         `- URL: ${SITE_URL}/tour/${tour.id}`,
         `- Duration: ${tour.duration}`,
         `- Group size: ${tour.groupSize}`,
-        `- ${priceLine}`,
+        ...priceLines,
         `- ${cleanText(tour.description, 400)}`,
       ].join("\n");
     })

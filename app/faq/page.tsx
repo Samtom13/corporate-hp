@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
-import { getFaqs, getSettings } from "@/lib/db";
+import { getFaqs } from "@/lib/db";
+import { organizationFacts } from "@/lib/content";
 import {
   SITE_URL,
   organizationJsonLd,
@@ -22,10 +23,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function FaqPage() {
-  const [faqs, settings] = await Promise.all([getFaqs(), getSettings()]);
+  const [faqs, orgFacts] = await Promise.all([getFaqs(), organizationFacts()]);
 
   const jsonLd = jsonLdDocument([
-    organizationJsonLd({ rating: settings.reviewRating, count: settings.reviewCount }),
+    organizationJsonLd(orgFacts),
     faqPageJsonLd(faqs, `${SITE_URL}/faq`),
     breadcrumbJsonLd([
       { name: "Home", url: `${SITE_URL}/` },

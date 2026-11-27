@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import Testimonials from "@/components/Testimonials";
-import { getTours, getReviews, getSettings, getPublishedArticles } from "@/lib/db";
+import { getReviews } from "@/lib/db";
+import { siteTours, siteSettings, publishedArticles, organizationFacts } from "@/lib/content";
 import {
   SITE_URL,
   SITE_NAME,
@@ -40,18 +41,19 @@ const steps = [
 
 
 export default async function HomePage() {
-  const [experiences, allReviews, settings, articles] = await Promise.all([
-    getTours(),
+  const [experiences, allReviews, settings, articles, orgFacts] = await Promise.all([
+    siteTours(),
     getReviews(),
-    getSettings(),
-    getPublishedArticles(),
+    siteSettings(),
+    publishedArticles(),
+    organizationFacts(),
   ]);
   const featuredReviews = allReviews.filter((r) => r.featured).slice(0, 6);
   const latestArticles = articles.slice(0, 3);
 
   const jsonLd = jsonLdDocument([
     {
-      ...organizationJsonLd({ rating: settings.reviewRating, count: settings.reviewCount }),
+      ...organizationJsonLd(orgFacts),
       review: reviewNodes(featuredReviews),
     },
     {
@@ -310,6 +312,43 @@ export default async function HomePage() {
           rating={settings.reviewRating}
           count={settings.reviewCount}
         />
+
+        {/* ── Photography — served at /photo from a separate deployment ── */}
+        <section className="py-28 px-6 bg-white">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="aspect-[4/3] overflow-hidden bg-stone-100 order-1 md:order-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photo/og.jpg"
+                alt="A private photo session in Kyoto with a local photographer"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div>
+              <p className="text-xs tracking-[0.3em] uppercase text-[#016812] mb-4">
+                Also by Bond
+              </p>
+              <h2
+                className="text-4xl md:text-5xl font-light text-[#1A1A1A] leading-tight mb-6"
+                style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+              >
+                Photographed, not just visited.
+              </h2>
+              <p className="text-stone-500 font-light leading-relaxed text-sm mb-8">
+                A private 30-minute session with a local photographer who walks Kyoto with
+                you. Unlimited shots, an edited gallery in one to five days, and no limit on
+                how you use them.
+              </p>
+              <a
+                href="/photo"
+                className="inline-block px-10 py-4 border border-[#016812] text-[#016812] text-xs tracking-widest uppercase hover:bg-[#016812] hover:text-white transition-all duration-300"
+              >
+                See photo sessions
+              </a>
+            </div>
+          </div>
+        </section>
 
         {/* ── From the Journal — only once an article is published ── */}
         {latestArticles.length > 0 && (

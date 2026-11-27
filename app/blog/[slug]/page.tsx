@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
-import { getArticleById, getPublishedArticles, getSettings } from "@/lib/db";
+import { getArticleById } from "@/lib/db";
+import { publishedArticles, organizationFacts } from "@/lib/content";
 import {
   SITE_URL,
   OG_IMAGE,
@@ -65,13 +66,13 @@ export default async function ArticlePage({ params }: Props) {
   const article = await getArticleById(slug);
   if (!article || article.status !== "published") notFound();
 
-  const [all, settings] = await Promise.all([getPublishedArticles(), getSettings()]);
+  const [all, orgFacts] = await Promise.all([publishedArticles(), organizationFacts()]);
   const related = all.filter((a) => a.id !== article.id).slice(0, 3);
   const plainBody = markdownToPlainText(article.body);
   const url = `${SITE_URL}/blog/${article.id}`;
 
   const jsonLd = jsonLdDocument([
-    organizationJsonLd({ rating: settings.reviewRating, count: settings.reviewCount }),
+    organizationJsonLd(orgFacts),
     articleJsonLd(article, plainBody),
     ...(article.faqs.length > 0 ? [faqPageJsonLd(article.faqs, url)] : []),
     breadcrumbJsonLd([

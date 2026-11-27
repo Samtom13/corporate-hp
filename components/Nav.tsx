@@ -7,8 +7,11 @@ export default function Nav({ showJournal = false }: { showJournal?: boolean }) 
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // `external: true` renders a plain <a>: /photo is rewritten to the separate
+  // photography deployment, which the client-side router cannot navigate to.
   const links = [
     { label: "Experiences", href: "/#experiences" },
+    { label: "Photo", href: "/photo", external: true },
     { label: "How It Works", href: "/#how-it-works" },
     { label: "About", href: "/#about" },
     ...(showJournal ? [{ label: "Journal", href: "/blog" }] : []),
@@ -40,18 +43,21 @@ export default function Nav({ showJournal = false }: { showJournal?: boolean }) 
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-10">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={`text-xs tracking-widest uppercase transition-colors duration-300 ${
-                scrolled ? "text-stone-500 hover:text-[#016812]" : "text-white/80 hover:text-white"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex items-center gap-7 xl:gap-9">
+          {links.map((link) => {
+            const className = `text-xs tracking-widest uppercase transition-colors duration-300 ${
+              scrolled ? "text-stone-500 hover:text-[#016812]" : "text-white/80 hover:text-white"
+            }`;
+            return link.external ? (
+              <a key={link.label} href={link.href} className={className}>
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.label} href={link.href} className={className}>
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             href="/booking"
             className={`text-xs tracking-widest uppercase px-6 py-3 border transition-all duration-300 ${
@@ -66,7 +72,7 @@ export default function Nav({ showJournal = false }: { showJournal?: boolean }) 
 
         {/* Mobile hamburger */}
         <button
-          className={`md:hidden flex flex-col gap-1.5 ${scrolled ? "text-[#1A1A1A]" : "text-white"}`}
+          className={`lg:hidden flex flex-col gap-1.5 ${scrolled ? "text-[#1A1A1A]" : "text-white"}`}
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >
@@ -78,17 +84,30 @@ export default function Nav({ showJournal = false }: { showJournal?: boolean }) 
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t border-stone-100 px-6 py-8 flex flex-col gap-6">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-xs tracking-widest uppercase text-stone-500 hover:text-[#016812]"
-              onClick={() => setMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="lg:hidden bg-white border-t border-stone-100 px-6 py-8 flex flex-col gap-6">
+          {links.map((link) => {
+            const className =
+              "text-xs tracking-widest uppercase text-stone-500 hover:text-[#016812]";
+            return link.external ? (
+              <a
+                key={link.label}
+                href={link.href}
+                className={className}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={className}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             href="/booking"
             className="text-xs tracking-widest uppercase px-6 py-3 border border-[#016812] text-center text-[#016812] hover:bg-[#016812] hover:text-white transition-all"
