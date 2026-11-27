@@ -41,8 +41,11 @@ export async function GET() {
     })
     .join("\n\n");
 
+  // FAQ answers are the part an assistant quotes back to a traveller, so they
+  // are printed whole. A cut-off answer here reads as a cut-off price list.
+  // The cap only guards against an answer pasted in at article length.
   const faqSection = faqs
-    .map((faq) => `### ${faq.question}\n${cleanText(faq.answer, 600)}`)
+    .map((faq) => `### ${faq.question}\n${cleanText(faq.answer, 2000)}`)
     .join("\n\n");
 
   const articleSection = articles
